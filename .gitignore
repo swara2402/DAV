@@ -14,5 +14,7 @@ node_modules/
 .DS_Store
 *.log
 *.sqlite3
+*.db
+.env.local
 .vercel/
 
