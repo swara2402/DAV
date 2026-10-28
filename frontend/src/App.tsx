@@ -36,14 +36,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/persona"
-              element={
-                <ProtectedRoute>
-                  <PersonaSelection />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/persona" element={<PersonaSelection />} />
             <Route
               path="/dashboard"
               element={

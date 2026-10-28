@@ -20,16 +20,18 @@ export const Auth: React.FC = () => {
     }
   }
 
-  const handleCustomSubmit = (e: React.FormEvent) => {
+  const handleCustomSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email || !password) {
       setError('Please provide both email and password.')
       return
     }
-    // In local demo mode, create user workspace session
-    localStorage.setItem('ld_auth_token', `demo_fresh`)
-    localStorage.setItem('ld_active_persona', 'fresh')
-    navigate('/dashboard')
+    try {
+      await loginDemo('fresh')
+      navigate('/dashboard')
+    } catch (err: any) {
+      setError(err.message || 'Failed to initialize session.')
+    }
   }
 
   return (
