@@ -84,25 +84,25 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-[#1A1A19] border border-stone-200 dark:border-stone-800 rounded-2xl w-full max-w-md shadow-2xl p-6 relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+      <div className="bg-white dark:bg-[#141416] border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl w-full max-w-md shadow-2xl p-7 relative animate-slide-up">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition"
+          className="absolute top-5 right-5 p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h3 className="text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-100 mb-1">
+        <h3 className="text-xl font-bold tracking-tight text-zinc-950 dark:text-white mb-1">
           {initialData ? 'Edit Expense' : 'Quick Add Expense'}
         </h3>
-        <p className="text-xs text-stone-500 dark:text-stone-400 mb-5">
-          Enter daily spending to calibrate your behavioral insight model.
+        <p className="text-xs text-zinc-500 mb-6">
+          Log everyday spending to continuously calibrate your behavioral model.
         </p>
 
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
+          <div className="mb-5 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -111,11 +111,11 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Amount */}
           <div>
-            <label className="block text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
               Amount (INR) *
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-stone-400 text-sm font-medium">
+              <span className="absolute left-3.5 top-2.5 text-zinc-400 text-base font-bold font-mono">
                 ₹
               </span>
               <input
@@ -126,14 +126,14 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="450.00"
-                className="w-full pl-8 pr-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80 text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
               />
             </div>
           </div>
 
           {/* Category Chips */}
           <div>
-            <label className="block text-xs font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
               Category *
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -144,10 +144,10 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                     key={cat.key}
                     type="button"
                     onClick={() => setCategory(cat.key)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                        : 'bg-stone-50 dark:bg-stone-900 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:border-stone-300'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-glow-emerald-sm scale-[1.02]'
+                        : 'bg-zinc-50 dark:bg-zinc-900/80 text-zinc-700 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700'
                     }`}
                   >
                     {cat.label}
@@ -159,7 +159,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
           {/* Date */}
           <div>
-            <label className="block text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
               Date *
             </label>
             <input
@@ -167,13 +167,13 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80 text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
             />
           </div>
 
-          {/* Optional Description */}
+          {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-stone-700 dark:text-stone-300 mb-1">
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
               Description (optional)
             </label>
             <input
@@ -181,24 +181,24 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g. Swiggy quick delivery"
-              className="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-stone-100 dark:border-stone-800">
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100 dark:border-zinc-800/80 mt-6">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg border border-stone-200 dark:border-stone-700 text-xs font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition"
+              className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium shadow-sm transition disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-xs font-bold shadow-glow-emerald-sm transition-all disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? 'Saving...' : initialData ? 'Update Expense' : 'Save Expense'}
             </button>
@@ -208,4 +208,3 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     </div>
   )
 }
-
