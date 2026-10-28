@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-page: #FAFAF8;
+    --text-primary: #1C1917;
+    --text-muted: #78716C;
+    --border-color: #E7E5E4;
+    --card-bg: #FFFFFF;
+  }
+
+  .dark {
+    --bg-page: #0F0F0E;
+    --text-primary: #F5F5F4;
+    --text-muted: #A8A29E;
+    --border-color: #292524;
+    --card-bg: #1A1A19;
+  }
+
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+}

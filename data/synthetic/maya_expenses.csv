@@ -1,0 +1,115 @@
+id,persona_id,date,amount,category,description
+bc8960a9-23b8-41e9-b924-56de3eb13b90,maya-001,2026-08-08,455.77,convenience_food,Domino's pizza
+07a0ca6e-0822-48f3-ac03-1199972a8469,maya-001,2026-08-07,1079.71,groceries,BigBasket order
+b74d0fb1-32e7-4629-8fad-c1a606cb0fb3,maya-001,2026-08-07,148.39,transport,Bus pass renewal
+47378190-96da-4dac-b2ff-5d2a386ecbe0,maya-001,2026-08-07,342.45,transport,Petrol fill
+562b0f79-c374-49ee-b50b-ea63371ecd7b,maya-001,2026-08-05,480.35,other,Book purchase
+142c3fe8-60e7-4113-ac1b-8ca1f91e1d4c,maya-001,2026-08-14,89.24,convenience_food,Zomato lunch
+e2acf72f-9e57-4f7a-a0ee-89aed453dd32,maya-001,2026-08-14,467.79,convenience_food,Domino's pizza
+11ce5dd2-b45e-41f0-b139-d32c93cd59bf,maya-001,2026-08-16,116.26,convenience_food,KFC bucket
+fc377a4c-4a15-444d-85e7-ce8a3a578a8e,maya-001,2026-08-10,71.41,convenience_food,Late-night Swiggy
+47294739-614f-43d7-99db-3ad0ddd1dfb2,maya-001,2026-08-10,37.24,convenience_food,McDonald's meal
+5ec42e08-29a3-42e9-9d65-a441d58842de,maya-001,2026-08-13,140.71,convenience_food,Late-night Swiggy
+88bd6407-2bcf-4e01-a28d-efe39bf00273,maya-001,2026-08-12,472.36,groceries,BigBasket order
+ece66fa2-fd51-46e6-851b-4cf36123fdf7,maya-001,2026-08-11,1147.86,groceries,Reliance Fresh
+d261a7ab-3aa2-44f9-8e51-f30dc6a7ee39,maya-001,2026-08-16,358.08,transport,Airport cab
+e9c349e0-3602-48ac-90f1-bc81448aaa9e,maya-001,2026-08-12,64.45,transport,Petrol fill
+654821d0-7fcd-4eb1-a7ca-d415366eb16f,maya-001,2026-08-15,474.31,transport,Auto fare
+89fa6a68-8fb5-427b-beb7-99193f22faf8,maya-001,2026-08-12,1484.79,shopping,Myntra order
+5cabcc97-663f-4c97-9562-69f0e5d7b875,maya-001,2026-08-14,935.68,shopping,IKEA home item
+dc713d96-0c0f-4195-817a-f08a1745d6d8,maya-001,2026-08-14,2993.11,bills,Internet bill
+62801c45-1043-4a10-98ae-43346c12ace8,maya-001,2026-08-16,664.70,other,Event tickets
+ae849217-1d53-434b-b881-39b9ae270da7,maya-001,2026-08-21,186.59,convenience_food,Swiggy dinner order
+5715bd6f-a416-4293-84c2-e2e3444ea7c8,maya-001,2026-08-21,166.06,convenience_food,Uber Eats weekend
+e037e5ed-b8db-4672-b42d-47cc00d4af59,maya-001,2026-08-18,581.55,groceries,Reliance Fresh
+deda4e16-1b3d-4d5c-a9a1-fa6f81f76d1c,maya-001,2026-08-23,487.35,transport,Metro card recharge
+2720797d-32eb-4689-9be5-78c781f631d4,maya-001,2026-08-23,331.39,transport,Rapido bike ride
+87c5421e-ec24-43c5-8754-108ff4188f3f,maya-001,2026-08-18,218.26,transport,Bus pass renewal
+edd96831-1ca3-4cfb-84fc-6d827d154385,maya-001,2026-08-21,463.32,transport,Auto fare
+e0c53cb8-3da9-42a9-8ed4-2f1a3d4cbf37,maya-001,2026-08-23,2660.42,shopping,Flipkart sale purchase
+c40db9b4-885f-4e66-82b6-d2c5fa5d3100,maya-001,2026-08-23,758.72,other,Medical expense
+f6e07cc0-6c52-449f-9b49-bd26df57c59a,maya-001,2026-08-26,118.97,convenience_food,Breakfast at cafe
+337ea2df-b09b-4a5c-badc-c32ac1590f53,maya-001,2026-08-25,18.65,convenience_food,Breakfast at cafe
+a65e688e-abf3-4d39-bec2-1bbe66245bfa,maya-001,2026-08-29,112.69,convenience_food,Domino's pizza
+1064005c-3985-43cf-bf76-be1d1efa2197,maya-001,2026-08-28,769.53,groceries,Reliance Fresh
+122c9a56-01d7-4256-b860-2ab696a402f2,maya-001,2026-08-28,639.51,groceries,Milk and bread
+3ceddf2d-839f-4c50-9223-b5135496f63c,maya-001,2026-08-24,153.02,transport,Airport cab
+ef7ddc76-b92d-422b-a1df-306f8a0b3c33,maya-001,2026-08-27,175.31,transport,Metro card recharge
+1825bc54-30be-445f-a835-14f2ceb81f9d,maya-001,2026-08-25,1813.39,shopping,IKEA home item
+dd2467ac-778e-4db3-a93d-ffbc6c6fa611,maya-001,2026-08-27,471.41,shopping,Flipkart sale purchase
+894a05e4-30b1-47ef-b10c-0c003fa7f104,maya-001,2026-09-06,120.07,convenience_food,Zomato lunch
+766ecb15-474e-4c19-aef9-12766c006f61,maya-001,2026-09-03,1322.52,convenience_food,Dunzo grocery quick delivery
+db20a56e-dc81-4fe7-8eda-8bbb71710434,maya-001,2026-09-01,538.41,convenience_food,Zomato lunch
+c0e9ab30-ed26-42e9-97e0-11b7f8102383,maya-001,2026-09-05,327.28,groceries,DMart monthly groceries
+dd59ba71-36b8-4481-bb3a-4e3e7c52fa17,maya-001,2026-09-01,1303.30,groceries,Zepto scheduled grocery
+63f2ae24-fc3d-4348-808d-4127610461e3,maya-001,2026-08-31,721.35,groceries,Local kirana store
+f512c4c3-b253-4218-ac4a-37ea490617f2,maya-001,2026-09-06,466.93,transport,Petrol fill
+27a0c3d7-7c96-4f79-b7e9-9acaa97065e1,maya-001,2026-09-06,378.73,transport,Bus pass renewal
+0f9aea4b-8acd-4e10-bc59-4585944528c0,maya-001,2026-09-01,135.45,transport,Uber/Ola commute
+eb5cf467-80ba-4d64-ba0e-cfea958ca9ba,maya-001,2026-08-31,386.59,transport,Uber/Ola commute
+98543881-118a-4d29-af92-3996d9f195d0,maya-001,2026-09-04,640.81,shopping,Amazon delivery
+e3e9de99-f10c-418b-9eb0-e38a675dd5af,maya-001,2026-09-06,390.29,shopping,Myntra order
+50fd9d3f-85d5-4695-90b2-b633956b8c0c,maya-001,2026-09-10,215.90,convenience_food,Late-night Swiggy
+21813d25-6552-48a6-83ff-50113d1a85dd,maya-001,2026-09-12,465.54,groceries,Weekly provisions
+ef8c485b-c07a-40f2-add4-253b50f0fd0a,maya-001,2026-09-09,1073.20,groceries,Reliance Fresh
+89a2688b-12c1-46e0-9998-5f15ff002d4d,maya-001,2026-09-11,54.19,transport,Bus pass renewal
+119c4ea3-e180-4081-9958-a499eeea163e,maya-001,2026-09-09,145.92,transport,Metro card recharge
+ce9e1a11-fcbb-4e59-bbdd-cf7c9c96e9ec,maya-001,2026-09-12,850.37,other,Stationery
+1a84a51a-a9d3-47c7-ae87-905e4ca415ea,maya-001,2026-09-19,461.59,convenience_food,Breakfast at cafe
+35ebd32d-9ad6-40ab-8821-2ddb45b89cd9,maya-001,2026-09-14,543.81,groceries,Local kirana store
+40497b71-7d10-4c60-8162-7cf1439472e6,maya-001,2026-09-19,141.62,transport,Airport cab
+d450281c-6c6f-4633-a260-772317a0df49,maya-001,2026-09-20,457.40,transport,Uber/Ola commute
+fad409e2-a319-4cb4-a17d-65a0c56811cd,maya-001,2026-09-14,174.51,transport,Auto fare
+8f9797b0-6d7c-43c9-b4a6-9f3c8d3aed99,maya-001,2026-09-19,167.88,transport,Petrol fill
+5e84f058-d5a8-44eb-8939-23de8babce3b,maya-001,2026-09-19,2846.14,bills,Mobile recharge
+ae9bec36-35c7-436c-9b99-62c6e61fecc0,maya-001,2026-09-27,40.90,convenience_food,Swiggy dinner order
+8f5486b7-c7b5-42bc-9a8a-aeca1a50aec3,maya-001,2026-09-22,315.63,convenience_food,Late-night Swiggy
+2790cebd-bfdd-43d9-9ee3-ac2af94d6204,maya-001,2026-09-27,555.77,convenience_food,Blinkit snacks run
+2d534dd0-cf8e-4c5a-8cc5-6569f9e8a369,maya-001,2026-09-22,65.42,convenience_food,Dunzo grocery quick delivery
+cd5f4822-6966-48aa-ae49-f329c84a7b28,maya-001,2026-09-26,232.22,groceries,Weekly provisions
+b386f7a4-c991-403f-a8c1-3091444d610b,maya-001,2026-09-26,1070.88,groceries,Milk and bread
+d10bd1d0-3317-4470-b8f1-6a81787f2425,maya-001,2026-09-21,222.14,transport,Airport cab
+3a43b2ba-df0f-46cb-8b9b-c326d20eac17,maya-001,2026-09-23,463.30,transport,Auto fare
+c5f8bc16-f786-4b50-91c5-8ef0dd463c09,maya-001,2026-09-23,740.76,bills,OTT subscription
+54c63cd8-8945-4f27-97fa-2d8dfb2ca025,maya-001,2026-09-24,677.33,other,Event tickets
+43f59a85-fbc9-487a-b668-a61794a1875d,maya-001,2026-09-30,575.69,convenience_food,Dunzo grocery quick delivery
+6fb78271-504d-481f-8953-5b63ba81edd9,maya-001,2026-10-01,340.92,groceries,Weekly provisions
+6fa17735-b572-43d0-8b5c-ea6a41357e8c,maya-001,2026-10-02,223.34,transport,Metro card recharge
+bdf070aa-f0b5-456b-b82c-9074afd5dea5,maya-001,2026-10-04,50.76,transport,Bus pass renewal
+ebb7a385-aa0b-4b14-b2e9-702d11e9cdaa,maya-001,2026-09-30,2077.76,shopping,IKEA home item
+e6697833-b841-40a0-9fe7-71d6d9178793,maya-001,2026-09-30,1124.56,shopping,Nykaa order
+311c6eb6-2095-4ef6-8ded-f9fb4bb00f20,maya-001,2026-10-01,467.55,other,Event tickets
+c9277d9b-6e0d-4648-b5ce-884149732d6c,maya-001,2026-10-05,392.60,convenience_food,Domino's pizza
+7118e364-7709-4749-927e-ecfaa79ac9aa,maya-001,2026-10-09,322.20,convenience_food,Zepto instant order
+cb323e35-7922-4ac2-82dc-4c8e36b5229a,maya-001,2026-10-08,88.16,convenience_food,Late-night Swiggy
+48a639d0-15b5-4908-a8aa-71582b70e525,maya-001,2026-10-11,80.62,convenience_food,Office canteen (overpriced)
+17e8392a-55ce-45db-9e87-e04ca2086977,maya-001,2026-10-09,294.16,convenience_food,Late-night Swiggy
+39820cff-4f77-4665-ac3c-56403c20592f,maya-001,2026-10-11,126.79,convenience_food,Uber Eats weekend
+d98868dd-9c7c-4377-b9a2-8903fbe33b24,maya-001,2026-10-05,391.56,groceries,Milk and bread
+624c69b6-b244-45a7-b7e5-848131c681ec,maya-001,2026-10-10,254.94,transport,Bus pass renewal
+e4855aa1-016b-4287-b008-05cca7f36ae9,maya-001,2026-10-06,272.47,transport,Metro card recharge
+3fcb7546-8eb2-4579-8cdb-1ca476ecbdd6,maya-001,2026-10-10,823.70,other,Movie tickets
+87f8424d-aae6-4fc1-b6f2-dbfecd29a36f,maya-001,2026-10-15,566.99,convenience_food,Dunzo grocery quick delivery
+e45b712e-b822-4688-90a4-44329cd6c852,maya-001,2026-10-18,974.09,groceries,Reliance Fresh
+dc8aee30-be60-43f7-a8be-9288e5af6e39,maya-001,2026-10-18,856.21,groceries,Reliance Fresh
+c40c5d91-46fd-4062-a33d-c7afd701410d,maya-001,2026-10-14,817.08,groceries,Milk and bread
+3c07c574-4925-4af1-b6aa-e05b13d5f2f7,maya-001,2026-10-14,332.04,transport,Petrol fill
+3b33f3d8-269c-4696-a36c-7b8714a0bccb,maya-001,2026-10-14,172.27,transport,Bus pass renewal
+68586eba-6a34-4854-9071-4d5136c59dac,maya-001,2026-10-13,222.37,transport,Rapido bike ride
+6b8e869f-d538-4b0e-b4f3-193c0ff0a55c,maya-001,2026-10-15,198.90,transport,Petrol fill
+db52ca58-0500-4bc6-b20d-cb6ef2311f17,maya-001,2026-10-18,225.26,transport,Bus pass renewal
+da7b9095-63d6-4a39-80e3-befd4c71e0fe,maya-001,2026-10-12,1265.07,shopping,Flipkart sale purchase
+8bcf53a1-bc10-4a52-bf5d-2fdf89c8d2ab,maya-001,2026-10-18,2696.60,shopping,IKEA home item
+eb67146a-77a6-417c-972b-61082a405f12,maya-001,2026-10-22,40.22,convenience_food,Office canteen (overpriced)
+64de82e6-e82c-4d7b-86e7-45f988bc539c,maya-001,2026-10-20,425.61,convenience_food,Zepto instant order
+a48b3dbe-157d-44a1-86f0-28ffa9ba5a27,maya-001,2026-10-23,138.18,convenience_food,Zepto instant order
+0cdf742b-2e85-4b21-b631-de9ddde9f863,maya-001,2026-10-22,337.19,convenience_food,Dunzo grocery quick delivery
+53ac2ab9-7467-4cd9-b62f-5e5c53cd6268,maya-001,2026-10-21,444.67,convenience_food,Blinkit snacks run
+6bebac31-d4f8-4d72-b382-1cfdc083b73a,maya-001,2026-10-22,1189.60,groceries,Fruits and veggies
+0d557b61-8a17-4dfe-bfc0-0dc804f64d86,maya-001,2026-10-19,527.95,groceries,Reliance Fresh
+c1156d6d-0a4e-4b70-a6d9-64a3f510ab53,maya-001,2026-10-19,150.90,transport,Airport cab
+2702878b-9f0f-4a8d-8537-9ff6d6d7b3b8,maya-001,2026-10-20,63.96,transport,Metro card recharge
+37cc863b-f2a0-4459-9060-4f621d48a071,maya-001,2026-10-22,157.35,transport,Rapido bike ride
+9b749245-9b1b-4895-aaf4-3ab75e6fea07,maya-001,2026-10-21,259.27,transport,Airport cab
+9424aed5-1bac-4c15-8fa0-3f26f6f7f0cc,maya-001,2026-10-25,2211.40,shopping,Myntra order
+60141de9-f54a-40a2-a874-66d7ad66a1bd,maya-001,2026-10-21,271.90,shopping,Croma electronics

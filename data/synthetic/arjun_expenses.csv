@@ -1,0 +1,130 @@
+id,persona_id,date,amount,category,description
+5ca260c9-eb76-47c9-b08a-4895d4ffa666,arjun-001,2026-08-07,161.25,convenience_food,Chai + samosa outside
+6f887f28-3e49-4d09-9b19-d8b8d8302081,arjun-001,2026-08-03,745.24,convenience_food,Blinkit snacks run
+dedab027-6550-474a-9422-373f862268d1,arjun-001,2026-08-07,31.71,convenience_food,Blinkit snacks run
+82af085c-138d-494c-ab0a-beddc77444cb,arjun-001,2026-08-04,1169.55,groceries,Weekly provisions
+59e1ac09-5970-4859-86b6-e4ade7ea8d5a,arjun-001,2026-08-07,1023.19,groceries,Milk and bread
+2722796e-9a36-41ec-ac6a-6e9a328067a1,arjun-001,2026-08-04,156.32,transport,Auto fare
+a0c14035-c5d9-4f51-b387-e1bd2d5972c6,arjun-001,2026-08-08,392.10,transport,Uber/Ola commute
+ae5ec365-72eb-4474-9458-054ec2874f06,arjun-001,2026-08-09,272.35,transport,Bus pass renewal
+50ee7a92-a091-41e0-b891-b0c3dd3f487e,arjun-001,2026-08-07,2000.38,shopping,Flipkart sale purchase
+cbdc4318-4d85-43d2-a1a2-748571348c2a,arjun-001,2026-08-03,622.68,shopping,IKEA home item
+5e659654-0e90-48b6-89a0-a0f673b0a091,arjun-001,2026-08-05,556.60,other,Gift for friend
+626d719d-81cf-4252-9815-9d6c9d713084,arjun-001,2026-08-15,532.68,convenience_food,Zomato lunch
+925817b7-cf50-4889-a8b7-7f7b7321bf6b,arjun-001,2026-08-16,954.43,groceries,DMart monthly groceries
+0fd6f47e-f52d-4af2-a69e-d4c980599b93,arjun-001,2026-08-12,1047.39,groceries,Reliance Fresh
+812a1f9b-1596-4802-b6dd-6257fb7d9f1c,arjun-001,2026-08-16,96.58,transport,Auto fare
+707df251-fdb1-429e-b010-ed13b526b22d,arjun-001,2026-08-10,340.76,transport,Metro card recharge
+486bb6bf-eafd-47d9-9f73-3a3e5d286aa4,arjun-001,2026-08-14,285.83,transport,Metro card recharge
+ca0ac6ac-0d67-438e-990f-0c5badcc3daf,arjun-001,2026-08-16,224.34,transport,Auto fare
+adaa44ca-8ed6-4d5e-9831-8aa354669d19,arjun-001,2026-08-12,333.90,transport,Uber/Ola commute
+df8f4197-9a4a-49b2-a806-133cf6e39356,arjun-001,2026-08-15,995.61,shopping,Nykaa order
+f7baf55e-4f6b-48c8-998d-daeceaafe543,arjun-001,2026-08-15,428.21,bills,Mobile recharge
+8f158449-4f40-422f-95b0-2530f020e992,arjun-001,2026-08-21,464.85,convenience_food,Office canteen (overpriced)
+f275b5f3-d436-47a8-b3ec-b951ab8cbf97,arjun-001,2026-08-19,1036.54,groceries,Local kirana store
+822c4d32-6c64-4c15-aba3-01cba561e1e9,arjun-001,2026-08-22,1160.41,groceries,BigBasket order
+f29a6339-577b-455a-b6d5-5494f37fd50d,arjun-001,2026-08-19,58.20,transport,Metro card recharge
+13c11754-27aa-4cbc-a337-7bbcfffe77c8,arjun-001,2026-08-18,394.77,transport,Metro card recharge
+d5ca69ab-8a2e-4a93-8558-0bb281f7f3fb,arjun-001,2026-08-23,183.11,transport,Uber/Ola commute
+c42cbc39-e05b-46c5-9636-3094a97431db,arjun-001,2026-08-21,382.39,transport,Uber/Ola commute
+b15e54f6-d4d3-4795-ae4b-ebc429890880,arjun-001,2026-08-20,566.94,shopping,Myntra order
+692e07b6-0b2f-4d5c-b00b-5d5fb89f72f3,arjun-001,2026-08-23,2359.07,shopping,Myntra order
+31ab0b56-d5c9-4dc7-a76a-dca978116802,arjun-001,2026-08-30,459.47,convenience_food,Uber Eats weekend
+70cafdd8-fc04-4f08-9207-0158f2771f63,arjun-001,2026-08-26,10.14,convenience_food,Late-night Swiggy
+80be7e35-61c2-445a-8733-230448223120,arjun-001,2026-08-27,1007.72,convenience_food,Uber Eats weekend
+331f63fb-d11f-48c0-a97c-a4fff75d599f,arjun-001,2026-08-28,61.67,convenience_food,Blinkit snacks run
+0d5ba7cd-4000-45f0-9f7d-0dd7236e1608,arjun-001,2026-08-30,424.51,convenience_food,Zepto instant order
+d9e604b3-8412-4335-988c-656db61e5fdb,arjun-001,2026-08-26,824.77,groceries,BigBasket order
+836b15c7-e7c2-45da-b306-958845d5a68d,arjun-001,2026-08-24,362.08,groceries,Local kirana store
+d11376e0-38d7-4b9a-a916-da57f24823ab,arjun-001,2026-08-27,391.55,groceries,BigBasket order
+5fbbf0b1-8083-49c8-a57e-01c90da23e5c,arjun-001,2026-08-24,448.08,transport,Petrol fill
+ee4a9b5d-5195-44e3-8737-4c86397b5f51,arjun-001,2026-08-24,156.10,transport,Auto fare
+2339ba19-2563-4cc3-8a97-ebf555d596af,arjun-001,2026-08-29,94.59,transport,Rapido bike ride
+c24369e7-2387-4af6-94c3-a832b231c60b,arjun-001,2026-08-30,67.24,transport,Petrol fill
+04dd7054-1448-43f7-a7e6-46c701582463,arjun-001,2026-08-27,367.49,transport,Bus pass renewal
+871c0884-9bdf-40f2-ba2c-0f19f0b2a5d1,arjun-001,2026-08-25,803.83,shopping,Croma electronics
+9f708368-cb3c-48ca-a392-57316b79afcc,arjun-001,2026-08-31,295.06,convenience_food,McDonald's meal
+a1c7cc8a-0435-4b64-893a-d23298c3e3ca,arjun-001,2026-09-06,281.65,groceries,Reliance Fresh
+9d642932-0066-453d-ade2-99a14a90cd0c,arjun-001,2026-09-01,869.99,groceries,Local kirana store
+8603156a-15ea-4bcf-ab10-21ceaa143cd8,arjun-001,2026-09-03,158.25,transport,Metro card recharge
+fd034ada-c952-4185-81e0-3a5e8b48f496,arjun-001,2026-08-31,488.59,transport,Bus pass renewal
+a2bb522b-0b25-4279-b85a-c5d0df92a621,arjun-001,2026-08-31,278.43,transport,Petrol fill
+c9dc72b8-5b6a-4102-8428-7378bf5023f4,arjun-001,2026-09-02,224.10,transport,Auto fare
+a48e40f1-d042-4dfa-96ab-087a8bc78e81,arjun-001,2026-09-07,150.07,convenience_food,KFC bucket
+b20507bb-fb16-4757-b6f1-86abaf475b49,arjun-001,2026-09-08,181.73,convenience_food,Uber Eats weekend
+10275b53-2285-42ef-8fbe-4fe92ea9c542,arjun-001,2026-09-10,119.51,convenience_food,Late-night Swiggy
+ca862225-0b36-4356-b39b-77a84b1f0d7b,arjun-001,2026-09-10,1209.05,groceries,DMart monthly groceries
+65f202f9-83f0-4dc7-8f61-2217eef16694,arjun-001,2026-09-07,459.31,groceries,Weekly provisions
+a59b457f-c0d7-4c73-895f-fa8140d92bce,arjun-001,2026-09-11,1485.86,groceries,Reliance Fresh
+54f90429-a7de-42cc-9da4-f4a70c3ce284,arjun-001,2026-09-13,178.75,transport,Airport cab
+be4969ec-6667-43bb-a3b5-63606fdc0bad,arjun-001,2026-09-13,172.95,transport,Auto fare
+b12b6680-7f07-4cb9-afd3-40c0f945f2fd,arjun-001,2026-09-10,247.88,transport,Auto fare
+ba220065-1526-4718-8d18-0a824447ceab,arjun-001,2026-09-13,1228.57,shopping,Croma electronics
+b7b8c1a5-9a45-493d-b227-890e4e76833a,arjun-001,2026-09-19,159.67,convenience_food,Domino's pizza
+727716ec-59fe-4bbc-b1a3-fad2b0946d2a,arjun-001,2026-09-17,480.87,convenience_food,Dunzo grocery quick delivery
+9d66e815-5a41-43b3-a95f-176cdebac186,arjun-001,2026-09-14,447.21,convenience_food,Office canteen (overpriced)
+f2a9dc8a-ca9e-4a62-bae3-114ba3b442bd,arjun-001,2026-09-17,906.38,convenience_food,Domino's pizza
+bff9507d-cd14-403e-8359-9af65d01f55f,arjun-001,2026-09-19,297.55,groceries,Zepto scheduled grocery
+702c1821-c804-4fb7-ad97-3b679b89e5cb,arjun-001,2026-09-15,478.76,transport,Airport cab
+5cb5e69c-5dc7-43e6-a529-64ffc74cc890,arjun-001,2026-09-14,65.66,transport,Metro card recharge
+732e2016-add7-42c9-a747-b93c9ae77eab,arjun-001,2026-09-18,222.28,transport,Uber/Ola commute
+5df06e8c-878a-4ed9-a33f-fc8292ec89af,arjun-001,2026-09-20,1241.64,shopping,Amazon delivery
+63119aca-848a-4440-bfc1-58582fa0d842,arjun-001,2026-09-21,299.84,convenience_food,Office canteen (overpriced)
+ff11c8ba-36ee-4640-b23e-f466b43bd27f,arjun-001,2026-09-27,353.09,groceries,Fruits and veggies
+da52d2ee-22bf-48f5-9f65-2a87333ee344,arjun-001,2026-09-26,995.44,groceries,Reliance Fresh
+ae92ea71-cf7d-4b43-9679-742fff4c96d6,arjun-001,2026-09-22,296.27,groceries,Reliance Fresh
+e42e5037-4a55-4ea0-8acb-be098ccc9cea,arjun-001,2026-09-26,350.53,transport,Uber/Ola commute
+a3404f08-b341-41b8-ad65-22b4b5a5f8e6,arjun-001,2026-09-22,184.98,transport,Rapido bike ride
+3373730e-fc31-4597-9f11-9c0f3967e60a,arjun-001,2026-09-23,128.34,transport,Bus pass renewal
+8dd4595b-5c63-46f3-86ba-8cd37e7838c9,arjun-001,2026-09-22,406.43,transport,Airport cab
+161237c9-e25d-49a8-9ca8-a5c42138afe0,arjun-001,2026-09-27,1232.95,shopping,Croma electronics
+6929de73-8693-4d9d-ba89-cbebb807d78a,arjun-001,2026-09-24,384.09,shopping,Nykaa order
+2e9522d6-9679-4482-a3c9-88e48d2238e6,arjun-001,2026-10-04,306.10,convenience_food,Uber Eats weekend
+de431e06-e924-4069-80bb-ae526ec01269,arjun-001,2026-10-04,93.70,convenience_food,Dunzo grocery quick delivery
+2a26f770-4ddb-4b36-a72c-058884a2576c,arjun-001,2026-09-28,170.92,convenience_food,Zomato lunch
+5894f7f1-39b8-4bb2-b596-ca7cef4afa88,arjun-001,2026-09-29,33.56,convenience_food,KFC bucket
+3240d7a1-4027-4b7d-9430-29a9d88f1c94,arjun-001,2026-10-02,284.22,convenience_food,Domino's pizza
+8892042f-9d4b-4bf9-8d85-e9c7a0017720,arjun-001,2026-09-30,1443.26,groceries,Local kirana store
+27794685-94a5-4fde-b10d-27c89780c215,arjun-001,2026-10-03,321.46,groceries,Local kirana store
+0a8bb5b4-9049-4583-ac86-a890d7b00bdc,arjun-001,2026-10-02,422.56,groceries,Weekly provisions
+35f789bc-a6b0-4458-83c0-7d4393a74792,arjun-001,2026-10-03,86.55,transport,Airport cab
+e3954cb1-7f7f-4c0a-87c0-d116a394ed54,arjun-001,2026-10-01,395.13,transport,Bus pass renewal
+ceae71cf-ce00-4af0-beb0-51817ba24588,arjun-001,2026-10-03,1727.62,shopping,Flipkart sale purchase
+2877f5d9-0f56-45f8-b048-faa112ae5c22,arjun-001,2026-09-30,2117.97,shopping,IKEA home item
+f9b21e6e-586a-446a-9c5b-e7d1fcef1972,arjun-001,2026-10-07,40.46,convenience_food,Office canteen (overpriced)
+8fc85fc0-83d5-4ceb-9edb-b8eec2baf0e0,arjun-001,2026-10-08,202.14,convenience_food,Dunzo grocery quick delivery
+44790612-1f5d-488f-b76a-bf093de28859,arjun-001,2026-10-05,39.01,convenience_food,KFC bucket
+dd39d793-6257-44a2-b204-be894a4b5563,arjun-001,2026-10-05,522.29,groceries,DMart monthly groceries
+93e34c35-ef0a-473d-93d2-d56dd0401587,arjun-001,2026-10-06,999.99,groceries,Local kirana store
+7faeb748-7781-421e-83c5-01cbfef7d9ea,arjun-001,2026-10-06,135.43,transport,Petrol fill
+8164ceec-64ab-451b-b1fa-c6e7170d7507,arjun-001,2026-10-08,445.58,transport,Uber/Ola commute
+0cf0374c-0c74-4c0f-9a57-553995560a2d,arjun-001,2026-10-06,255.75,transport,Metro card recharge
+4926ce5f-7878-4140-ac2a-4f71a77d95f1,arjun-001,2026-10-09,176.61,transport,Airport cab
+ba3df7ff-43b4-4ee5-a1e8-9e7e22498f66,arjun-001,2026-10-05,222.90,shopping,IKEA home item
+91fdfa4f-0d18-4b95-a68c-84770b95017c,arjun-001,2026-10-08,1224.18,shopping,Flipkart sale purchase
+5f89ed12-64d6-4fbf-98c0-1e2bf99f0704,arjun-001,2026-10-12,320.65,convenience_food,Dunzo grocery quick delivery
+c14565c7-5d98-4115-b05e-eefe8ece1128,arjun-001,2026-10-18,257.39,convenience_food,KFC bucket
+80051b10-66c1-4dca-8255-da619a3b0319,arjun-001,2026-10-13,201.92,convenience_food,McDonald's meal
+554227de-b6ad-448b-a314-d0c809f64405,arjun-001,2026-10-12,96.30,convenience_food,Swiggy dinner order
+9b33e3a4-2620-49a9-b4fd-33d184f2fd0f,arjun-001,2026-10-18,257.56,convenience_food,Chai + samosa outside
+518b2f21-9cf2-4859-ae6e-2e7253f591dc,arjun-001,2026-10-16,12.51,convenience_food,Dunzo grocery quick delivery
+d40ac5e9-81df-4517-961c-921097fe56c5,arjun-001,2026-10-16,710.84,groceries,Fruits and veggies
+54cc1e2a-5e4c-4287-8442-51dbd0d4ea67,arjun-001,2026-10-14,368.93,transport,Petrol fill
+b9aed8e4-e615-49c8-8bf8-1f864ec3f970,arjun-001,2026-10-15,353.21,transport,Bus pass renewal
+f791f1e5-43f9-4d6b-b97e-be8798cf1188,arjun-001,2026-10-17,442.44,transport,Uber/Ola commute
+0d259caa-b8ad-4d87-ba40-45dd93dfd907,arjun-001,2026-10-18,345.02,transport,Bus pass renewal
+c64c9647-9ea7-417c-b89f-7039a107cc46,arjun-001,2026-10-13,312.59,transport,Bus pass renewal
+b35556a5-f2bd-42f2-9293-f70508150147,arjun-001,2026-10-17,613.77,shopping,Myntra order
+34323ec6-b0c4-401c-a9b7-c0fa26c432f6,arjun-001,2026-10-14,253.02,bills,Internet bill
+84c86c46-2359-4fa4-b4ad-af890ff1aa9f,arjun-001,2026-10-24,445.13,convenience_food,Office canteen (overpriced)
+7a768555-a987-4218-bf84-faef5336723b,arjun-001,2026-10-20,64.86,convenience_food,Breakfast at cafe
+8bd88fcd-57a2-4e4e-887b-03e5e980f808,arjun-001,2026-10-20,689.87,groceries,Reliance Fresh
+f5141058-3138-4975-bbf3-3a349c2dfa97,arjun-001,2026-10-25,660.57,groceries,Fruits and veggies
+fb756923-f910-4bb3-b105-32523990e2c9,arjun-001,2026-10-23,520.47,groceries,Fruits and veggies
+5129950d-7d2f-4e58-b47a-1c5bb0b39015,arjun-001,2026-10-24,397.03,transport,Metro card recharge
+1f33242d-49ac-4087-8601-5028b8beff3d,arjun-001,2026-10-23,265.91,transport,Airport cab
+d1812f77-6500-4423-baeb-cd19e5508ea2,arjun-001,2026-10-23,308.06,transport,Petrol fill
+49a22441-0ac4-4e85-8a5b-1aff257f7595,arjun-001,2026-10-25,205.31,transport,Airport cab
+36c7d6fa-7aa4-4052-bf51-936241a64fed,arjun-001,2026-10-22,421.28,shopping,Nykaa order
+4588fc1b-b238-4849-8fe0-69b6eedaa802,arjun-001,2026-10-23,765.79,shopping,Flipkart sale purchase
+e7ba26ac-ab7a-4d1c-8cfe-f6833e11bafe,arjun-001,2026-10-23,1923.90,bills,Mobile recharge
