@@ -72,3 +72,4 @@ async def get_overdue_convenience_insight(
             pass
 
     return result
+

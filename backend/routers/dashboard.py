@@ -34,3 +34,4 @@ async def dashboard_summary(
         p_start = p_end - timedelta(days=84)
 
     return get_dashboard_summary(user_id, db, p_start, p_end)
+

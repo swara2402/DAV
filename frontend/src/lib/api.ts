@@ -242,3 +242,4 @@ export async function listActions(): Promise<ActionItem[]> {
 export async function getFollowup(actionId: string): Promise<FollowupOutcome> {
   return request(`/api/v1/actions/${actionId}/followup`)
 }
+

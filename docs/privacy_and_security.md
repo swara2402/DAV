@@ -91,3 +91,4 @@ In every FastAPI endpoint:
 Users have the right to erase all associated records.
 - Endpoint: `POST /api/v1/demo/reset` (with `confirm: true`).
 - Action: Atomically deletes all records in `expenses`, `tasks`, `actions`, and `demo_seed_runs` where `user_id` matches the caller.
+

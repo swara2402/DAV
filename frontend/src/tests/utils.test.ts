@@ -33,3 +33,4 @@ describe('Frontend Utility Functions', () => {
     expect(cn('text-red-500', 'text-green-500')).toBe('text-green-500')
   })
 })
+

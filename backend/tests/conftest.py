@@ -62,3 +62,4 @@ def arjun_auth_headers():
 def fresh_auth_headers():
     """Headers for authenticated demo user Fresh."""
     return {"Authorization": "Bearer demo_fresh"}
+

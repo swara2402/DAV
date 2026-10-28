@@ -77,3 +77,4 @@ The synthetic dataset integrity is guaranteed by `data/validate_synthetic.py`, w
    - Maya week counts: $\ge 3$ qualifying (Observed: 5), $\ge 3$ baseline (Observed: 7).
    - Arjun ratio: $\ge 1.5\times$ (Observed: 3.42×).
    - Arjun week counts: $\ge 3$ qualifying (Observed: 5), $\ge 3$ baseline (Observed: 7).
+

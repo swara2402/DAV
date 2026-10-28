@@ -178,3 +178,4 @@ def test_demo_seed_idempotency(client: TestClient, demo_auth_headers: dict):
     )
     assert r2.status_code == 200
     assert r2.json()["already_seeded"] is True
+

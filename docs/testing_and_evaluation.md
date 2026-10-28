@@ -90,3 +90,4 @@ To manually verify the full 60-second user journey:
 8. **Step 5: Transparency Panel**: Expand "How was this calculated?". Review the exact list of qualifying weeks and mathematical formula.
 9. **Step 6: Trial Action**: Click "I Tried This Change". Notice the feedback showing that follow-up outcome evaluation requires 4 subsequent calendar weeks.
 10. **Step 7: Settings & Reset**: Navigate to Settings, toggle theme (Light/Dark), and test "Reset Session Data".
+

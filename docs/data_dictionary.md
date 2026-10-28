@@ -137,3 +137,4 @@ Ensures idempotency and prevents duplicate seed records.
 | `persona_id` | TEXT | No | Persona code (`'maya'`, `'arjun'`, `'fresh'`). |
 | `dataset_version` | TEXT | No | Seed dataset version (`'v1.0'`). |
 | `seeded_at` | TEXT (ISO) | No | Timestamp when seed was executed. |
+

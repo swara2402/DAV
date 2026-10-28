@@ -215,3 +215,4 @@ def test_no_hardcoded_ratio():
 
     assert maya_res["ratio"] != arjun_res["ratio"]
     assert maya_res["qualifying_avg"] != arjun_res["qualifying_avg"]
+

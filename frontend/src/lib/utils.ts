@@ -53,3 +53,4 @@ export function formatCategoryName(category: string): string {
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
+

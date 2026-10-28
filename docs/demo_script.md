@@ -66,3 +66,4 @@
 - **Action**: Navigate to `/settings`, demonstrate the theme toggle (Dark Mode), and highlight the **"Reset Session Data"** capability.
 - **Narration**:
   > *"Transparent, reproducible, and private. That is Life, Decoded."*
+
