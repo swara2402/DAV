@@ -97,6 +97,22 @@ export async function resetDemo(): Promise<{ success: boolean; message: string }
 // ---------------------------------------------------------------------------
 // Expenses
 // ---------------------------------------------------------------------------
+export async function importExpensesCsv(csvText: string): Promise<{
+  imported: number
+  skipped: number
+  total_rows: number
+  source: string
+  errors: Array<{ line: number; reason: string }>
+  note: string
+}> {
+  return request('/api/v1/expenses/import-csv', {
+    method: 'POST',
+    body: csvText,
+    headers: { 'Content-Type': 'text/csv' },
+  })
+}
+
+
 export async function getExpenses(params?: {
   start_date?: string
   end_date?: string
