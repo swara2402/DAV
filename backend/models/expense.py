@@ -45,5 +45,6 @@ class ExpenseOut(BaseModel):
     amount: float
     category: str
     description: Optional[str]
+    data_source: Optional[str] = None
     created_at: str
     updated_at: str
