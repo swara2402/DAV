@@ -69,6 +69,17 @@ export async function getHealth(): Promise<{ status: string; version: string; en
 // ---------------------------------------------------------------------------
 // Profiles & Demo
 // ---------------------------------------------------------------------------
+export async function createPersonalSession(): Promise<{
+  access_token: string
+  user_id: string
+  email: string
+  expires_in_days: number
+  disclosure: string
+}> {
+  return request('/api/v1/demo/personal-session', { method: 'POST' })
+}
+
+
 export async function getProfile(): Promise<Profile> {
   return request('/api/v1/profiles/me')
 }
