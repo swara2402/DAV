@@ -231,7 +231,14 @@ async def import_expenses_csv(
             detail="Required columns not found. Include date, description/narration, and amount or debit/withdrawal. Optional: category.",
         )
 
-    rows = list(reader)
+    # Bound individual CSV cells as well as the overall request body. Some CSV
+    # exports contain a single malformed multi-megabyte field that would otherwise
+    # raise an uncaught csv.Error while materializing rows.
+    csv.field_size_limit(65536)
+    try:
+        rows = list(reader)
+    except csv.Error as exc:
+        raise HTTPException(status_code=400, detail="The CSV contains an invalid or oversized field.") from exc
     if len(rows) > 5000:
         raise HTTPException(status_code=413, detail="Import up to 5,000 transactions at a time.")
     user_id = user["user_id"]
@@ -275,7 +282,14 @@ async def import_expenses_csv(
             amount_text = amount_text.replace(",", "").replace("₹", "").replace("INR", "").strip()
             if amount_text.startswith("(") and amount_text.endswith(")"):
                 amount_text = "-" + amount_text[1:-1]
-            amount = abs(float(amount_text))
+            parsed_amount = float(amount_text)
+            # Signed amount exports commonly encode credits/income as negative
+            # values. Do not turn those into expenses with abs(); debit columns
+            # are treated as debits even when a bank formats them with a minus sign.
+            if amount_col and not debit_col and parsed_amount < 0:
+                skipped += 1
+                continue
+            amount = abs(parsed_amount)
             if not math.isfinite(amount) or amount <= 0:
                 skipped += 1
                 continue
