@@ -5,12 +5,12 @@ import json
 import uuid
 import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from auth import get_current_user
 from database import get_db
 from models.insight import InsightOut
-from services.insight_engine import calculate_overdue_convenience_insight
+from services.insight_engine import calculate_overdue_convenience_insight, load_public_timeuse_data
 
 logger = logging.getLogger(__name__)
 
@@ -75,3 +75,22 @@ async def get_overdue_convenience_insight(
             logger.exception("Failed to persist insight result for user %s", user_id)
 
     return result
+
+
+@router.get("/public-population-context")
+async def get_public_population_context(
+    user: dict = Depends(get_current_user),
+):
+    """
+    Retrieve population-level context from the public India Time Use Survey 2024 dataset.
+    Returns None if the dataset hasn't been imported yet.
+    """
+    public_data = load_public_timeuse_data()
+
+    if not public_data:
+        raise HTTPException(
+            status_code=404,
+            detail="Public dataset not available. Please run the import script first: python scripts/import_public_timeuse.py"
+        )
+
+    return public_data

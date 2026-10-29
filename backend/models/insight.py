@@ -41,3 +41,4 @@ class InsightOut(BaseModel):
     insufficient_reason: Optional[str]
     total_weeks_analyzed: int
     weekly_breakdown: list[dict]
+    population_context: Optional[dict[str, Any]] = None

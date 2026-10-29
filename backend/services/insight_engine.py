@@ -13,8 +13,10 @@ Definitions:
 """
 from __future__ import annotations
 
+import json
 import logging
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -24,9 +26,79 @@ from config import settings
 
 logger = logging.getLogger(__name__)
 
-ENGINE_VERSION = "1.0.0"
+ENGINE_VERSION = "1.1.0"  # Updated to include public dataset integration
 FORMULA_VERSION = "v1.0"
 INSIGHT_TIMEZONE = "Asia/Kolkata"
+
+# Public dataset paths
+PUBLIC_DATA_DIR = Path(__file__).parent.parent.parent / "data" / "public" / "india-time-use-2024"
+SUMMARY_CSV_PATH = PUBLIC_DATA_DIR / "activity_summary.csv"
+MANIFEST_JSON_PATH = PUBLIC_DATA_DIR / "manifest.json"
+
+
+def load_public_timeuse_data() -> dict[str, Any] | None:
+    """
+    Load the public India Time Use Survey 2024 data if it exists.
+    Returns None if the dataset hasn't been imported yet.
+    """
+    if not SUMMARY_CSV_PATH.exists() or not MANIFEST_JSON_PATH.exists():
+        logger.info("Public time-use dataset not found. Run import_public_timeuse.py to download.")
+        return None
+
+    try:
+        # Load manifest metadata
+        with open(MANIFEST_JSON_PATH, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+
+        # Load activity summary
+        summary_df = pd.read_csv(SUMMARY_CSV_PATH)
+
+        # Calculate population-level averages relevant to our app
+        # Focus on work-related and unpaid work activities that relate to task overload
+        work_related_codes = ["A1", "A2", "A3", "A4"]  # Work, study, household work
+        population_metrics = {}
+
+        if not summary_df.empty:
+            # Filter for working age population (18-59)
+            working_age_df = summary_df[summary_df["age_band"].isin(["18-24", "25-34", "35-44", "45-59"])]
+
+            if not working_age_df.empty:
+                # Calculate average daily work hours across the population
+                total_weighted_hours = working_age_df["weighted_mean_hours_per_record"].sum()
+                population_metrics["avg_daily_work_hours"] = round(total_weighted_hours / len(working_age_df), 2)
+
+                # Calculate average by age band for more granular context
+                age_band_metrics = {}
+                for age_band in ["18-24", "25-34", "35-44", "45-59"]:
+                    age_df = working_age_df[working_age_df["age_band"] == age_band]
+                    if not age_df.empty:
+                        age_band_metrics[age_band] = {
+                            "avg_daily_activity_hours": round(age_df["weighted_mean_hours_per_record"].mean(), 2),
+                            "total_respondents": int(age_df["respondents"].sum())
+                        }
+                population_metrics["age_band_breakdown"] = age_band_metrics
+
+                # Add state-level data if available
+                if "state" in working_age_df.columns:
+                    state_metrics = {}
+                    for state in working_age_df["state"].unique():
+                        if pd.notna(state):
+                            state_df = working_age_df[working_age_df["state"] == state]
+                            state_metrics[state] = {
+                                "avg_daily_activity_hours": round(state_df["weighted_mean_hours_per_record"].mean(), 2),
+                                "total_respondents": int(state_df["respondents"].sum())
+                            }
+                    population_metrics["state_breakdown"] = state_metrics
+
+        return {
+            "manifest": manifest,
+            "population_metrics": population_metrics,
+            "data_available": True
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to load public time-use dataset: {str(e)}")
+        return None
 
 # IST offset: UTC+5:30
 IST_OFFSET = timezone(timedelta(hours=5, minutes=30))
@@ -377,16 +449,25 @@ def calculate_overdue_convenience_insight(
     total_weeks = len(weekly_breakdown)
 
     # ------------------------------------------------------------------
-    # 4. Split only weeks with observed expense records into qualifying / baseline.
+    # 4. Load public dataset population context if available
+    # ------------------------------------------------------------------
+    public_data = load_public_timeuse_data()
+
+    # ------------------------------------------------------------------
+    # 5. Split only weeks with observed expense records into qualifying / baseline.
     # Missing logs are unknown, not zero-spend baseline weeks.
     # ------------------------------------------------------------------
     observed_weeks = [w for w in weekly_breakdown if w.get("spending_observed", False)]
     if len(observed_weeks) < min_a:
-        return _insufficient(
+        # Add public data to insufficient response as well
+        insufficient_result = _insufficient(
             "insufficient_expense_coverage",
             weekly_breakdown=weekly_breakdown,
             total_weeks=len(observed_weeks),
         )
+        if public_data:
+            insufficient_result["population_context"] = public_data
+        return insufficient_result
 
     qualifying = [w for w in observed_weeks if w["is_qualifying"]]
     baseline = [w for w in observed_weeks if not w["is_qualifying"]]
@@ -497,7 +578,7 @@ def calculate_overdue_convenience_insight(
             "overdue_task_titles": w["overdue_task_titles"],
         }
 
-    return {
+    final_result = {
         "insight_type": "overdue_convenience_correlation",
         "status": "sufficient",
         "headline": headline,
@@ -549,6 +630,12 @@ def calculate_overdue_convenience_insight(
         "total_weeks_analyzed": total_weeks,
         "weekly_breakdown": weekly_breakdown,
     }
+
+    # Add population context from public dataset if available
+    if public_data:
+        final_result["population_context"] = public_data
+
+    return final_result
 
 
 def _detect_data_source(user_id: str) -> str:

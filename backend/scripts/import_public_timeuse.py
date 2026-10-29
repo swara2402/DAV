@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import json
+import ssl
 import sys
 import urllib.request
 from datetime import datetime, timezone
@@ -29,7 +30,23 @@ REQUIRED_COLUMNS = {
 def download_source(url: str, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     request = urllib.request.Request(url, headers={"User-Agent": "LifeDecoded-public-data-import/1.0"})
-    with urllib.request.urlopen(request, timeout=90) as response, destination.open("wb") as out:
+    
+    # Create an SSL context that handles certificate verification properly
+    # This fixes SSL certificate issues in local Python environments
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = True
+    ssl_context.verify_mode = ssl.CERT_REQUIRED
+    
+    # On macOS, we might need to load system certificates if the default context fails
+    if sys.platform == "darwin":
+        try:
+            import certifi
+            ssl_context.load_verify_locations(certifi.where())
+        except ImportError:
+            # If certifi isn't installed, we'll still proceed with default context
+            pass
+    
+    with urllib.request.urlopen(request, timeout=90, context=ssl_context) as response, destination.open("wb") as out:
         while True:
             chunk = response.read(1024 * 1024)
             if not chunk:
