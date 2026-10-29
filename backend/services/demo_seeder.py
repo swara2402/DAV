@@ -59,23 +59,23 @@ def seed_persona(user_id: str, persona: str, db: Any) -> dict:
     if persona not in PERSONA_FILES:
         raise ValueError(f"Unknown persona: {persona}. Must be one of {list(PERSONA_FILES)}")
 
-    # Check if already seeded
+    # Check if already seeded (use migration column names: persona_id and dataset_version)
     if hasattr(db, "mode") and db.mode == "sqlite":
         existing = db.fetchone(
-            "SELECT version FROM demo_seed_runs WHERE user_id = ? AND persona = ?",
+            "SELECT dataset_version FROM demo_seed_runs WHERE user_id = ? AND persona_id = ?",
             (user_id, persona),
         )
     else:
         resp = (
             db.client.table("demo_seed_runs")
-            .select("version")
+            .select("dataset_version")
             .eq("user_id", user_id)
-            .eq("persona", persona)
+            .eq("persona_id", persona)
             .execute()
         )
         existing = resp.data[0] if resp.data else None
 
-    if existing and existing.get("version") == SEEDER_VERSION:
+    if existing and existing.get("dataset_version") == SEEDER_VERSION:
         return {
             "persona": persona,
             "seeded": False,
@@ -111,25 +111,24 @@ def seed_persona(user_id: str, persona: str, db: Any) -> dict:
     else:
         record_counts["tasks"] = 0
 
-    # Record seed run
+    # Record seed run (use migration column names: persona_id and dataset_version)
     now = _now_iso()
     seed_id = str(uuid.uuid4())
     if hasattr(db, "mode") and db.mode == "sqlite":
         db.execute(
             """
-            INSERT OR REPLACE INTO demo_seed_runs (id, user_id, persona, version, seeded_at, record_counts)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO demo_seed_runs (id, user_id, persona_id, dataset_version, seeded_at)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (seed_id, user_id, persona, SEEDER_VERSION, now, json.dumps(record_counts)),
+            (seed_id, user_id, persona, SEEDER_VERSION, now),
         )
     else:
         db.client.table("demo_seed_runs").upsert({
             "id": seed_id,
             "user_id": user_id,
-            "persona": persona,
-            "version": SEEDER_VERSION,
+            "persona_id": persona,
+            "dataset_version": SEEDER_VERSION,
             "seeded_at": now,
-            "record_counts": record_counts,
         }).execute()
 
     return {
@@ -150,20 +149,20 @@ def _ensure_profile(user_id: str, persona: str, db: Any) -> None:
     now = _now_iso()
     persona_names = {"maya": "Maya", "arjun": "Arjun", "fresh": "New User"}
     name = persona_names.get(persona, persona.title())
+    # Use profiles table migration columns: user_id as primary key, selected_persona
     if hasattr(db, "mode") and db.mode == "sqlite":
         db.execute(
             """
-            INSERT OR IGNORE INTO profiles (id, email, name, currency, created_at, updated_at)
-            VALUES (?, ?, ?, 'INR', ?, ?)
+            INSERT OR IGNORE INTO profiles (user_id, display_name, selected_persona, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (user_id, f"{persona}@demo.lifedecoded.app", name, now, now),
+            (user_id, name, persona, now, now),
         )
     else:
         db.client.table("profiles").upsert({
-            "id": user_id,
-            "email": f"{persona}@demo.lifedecoded.app",
-            "name": name,
-            "currency": "INR",
+            "user_id": user_id,
+            "display_name": name,
+            "selected_persona": persona,
             "created_at": now,
             "updated_at": now,
         }).execute()
@@ -232,17 +231,18 @@ def _insert_tasks(user_id: str, rows: list[dict], db: Any) -> int:
             if hasattr(db, "mode") and db.mode == "sqlite":
                 db.execute(
                     """
-                    INSERT OR IGNORE INTO tasks (id, user_id, title, category, due_date, completed_at, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT OR IGNORE INTO tasks (id, user_id, title, category, due_date, completed_at, created_at, db_created_at, db_updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         task_id,
                         user_id,
                         title,
-                        row.get("category", "other"),
+                        row.get("category", "personal"),  # Use valid category from migration
                         due_date,
                         completed_at,
                         created_at,
+                        now,
                         now,
                     ),
                 )
@@ -251,11 +251,12 @@ def _insert_tasks(user_id: str, rows: list[dict], db: Any) -> int:
                     "id": task_id,
                     "user_id": user_id,
                     "title": title,
-                    "category": row.get("category", "other"),
+                    "category": row.get("category", "personal"),  # Use valid category from migration
                     "due_date": due_date,
                     "completed_at": completed_at,
                     "created_at": created_at,
-                    "updated_at": now,
+                    "db_created_at": now,
+                    "db_updated_at": now,
                 }).execute()
             inserted += 1
         except Exception as e:
@@ -267,8 +268,8 @@ def _clear_user_data(user_id: str, db: Any) -> None:
     if hasattr(db, "mode") and db.mode == "sqlite":
         db.execute("DELETE FROM expenses WHERE user_id = ?", (user_id,))
         db.execute("DELETE FROM tasks WHERE user_id = ?", (user_id,))
-        db.execute("DELETE FROM actions WHERE user_id = ?", (user_id,))
+        db.execute("DELETE FROM insight_actions WHERE user_id = ?", (user_id,))
         db.execute("DELETE FROM demo_seed_runs WHERE user_id = ?", (user_id,))
     else:
-        for table in ("expenses", "tasks", "actions", "demo_seed_runs"):
+        for table in ("expenses", "tasks", "insight_actions", "demo_seed_runs"):
             db.client.table(table).delete().eq("user_id", user_id).execute()
