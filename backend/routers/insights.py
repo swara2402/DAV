@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import uuid
+import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 
@@ -10,6 +11,8 @@ from auth import get_current_user
 from database import get_db
 from models.insight import InsightOut
 from services.insight_engine import calculate_overdue_convenience_insight
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/insights", tags=["insights"])
 
@@ -53,7 +56,7 @@ async def get_overdue_convenience_insight(
                 ),
             )
         except Exception:
-            pass  # Non-blocking if table write has issues
+            logger.exception("Failed to persist insight result for user %s", user_id)
     else:
         try:
             db.client.table("insights").insert({
@@ -61,7 +64,7 @@ async def get_overdue_convenience_insight(
                 "user_id": user_id,
                 "insight_type": result["insight_type"],
                 "status": result["status"],
-                "computed_result": computed_json,
+                "computed_result": result,
                 "observation_start": result.get("observation_start"),
                 "observation_end": result.get("observation_end"),
                 "engine_version": result.get("engine_version", "1.0.0"),
@@ -69,6 +72,6 @@ async def get_overdue_convenience_insight(
                 "created_at": now,
             }).execute()
         except Exception:
-            pass
+            logger.exception("Failed to persist insight result for user %s", user_id)
 
     return result
