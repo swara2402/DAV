@@ -155,6 +155,12 @@ npm run build
 Production JWT verification uses the project's Auth JWKS endpoint for asymmetric signing keys. Never use the public anon key as a JWT signing secret. The API uses a service-role client, which bypasses RLS, so every database query must remain explicitly scoped to the authenticated user's `user_id`.
 ---
 
+## Real Public Research Data
+
+A reproducible importer is available for the genuine **India Time Use Survey 2024** public release. See [Real public-data ingestion](docs/real_public_data.md) and run `python scripts/import_public_timeuse.py` from `backend/` to download, validate, summarize, and record provenance for the source data.
+
+This is a separate research dataset, not personal finance data. It contains activity diary records, not linked bank transactions and overdue-task histories, so it must not be used to fabricate expense/task rows or claim the app's task-overload/spending hypothesis is validated. Maya and Arjun remain explicitly synthetic benchmark personas. The dashboard's personalized insight engine still requires genuine linked records entered by a user or obtained through a legitimate, consented integration.
+
 ## Known Limitations
 
 - **Demo mode uses SQLite.** Production deployments require a Supabase PostgreSQL instance with Row Level Security enabled.
