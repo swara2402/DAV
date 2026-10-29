@@ -213,6 +213,19 @@ def test_csv_import_adds_real_transactions_only_to_authenticated_user(client: Te
     other = client.get("/api/v1/expenses", headers=demo_auth_headers).json()
     assert not any(row["id"] in {item["id"] for item in imported} for row in other)
 
+    # Re-uploading the same statement must not double-count existing transactions.
+    repeated = client.post(
+        "/api/v1/expenses/import-csv",
+        content=csv_text,
+        headers={**fresh_auth_headers, "Content-Type": "text/csv"},
+    )
+    assert repeated.status_code == 200, repeated.text
+    assert repeated.json()["imported"] == 0
+    assert repeated.json()["skipped"] == 3
+    own_after_repeat = client.get("/api/v1/expenses", headers=fresh_auth_headers).json()
+    imported_after_repeat = [row for row in own_after_repeat if row.get("data_source") == "bank_csv_import"]
+    assert len(imported_after_repeat) == 2
+
 
 def test_csv_import_rejects_missing_required_columns(client: TestClient, fresh_auth_headers: dict):
     response = client.post(

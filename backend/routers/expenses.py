@@ -198,6 +198,7 @@ async def import_expenses_csv(
     connection is made and no transaction is invented.
     """
     import csv
+    import hashlib
     import io
     import math
 
@@ -222,6 +223,7 @@ async def import_expenses_csv(
     credit_col = next((normalized[k] for k in ("credit", "deposit", "deposits", "credit_amount") if k in normalized), None)
     category_col = next((normalized[k] for k in ("category", "expense_category") if k in normalized), None)
     type_col = next((normalized[k] for k in ("type", "transaction_type", "dr_cr", "debit_credit", "transaction_kind") if k in normalized), None)
+    reference_col = next((normalized[k] for k in ("reference", "reference_number", "transaction_id", "txn_id", "rrn", "utr", "bank_reference") if k in normalized), None)
 
     if not date_col or not desc_col or not (amount_col or debit_col):
         raise HTTPException(
@@ -248,7 +250,10 @@ async def import_expenses_csv(
             description = (row.get(desc_col) or "").strip()[:500]
             if type_col:
                 transaction_type = (row.get(type_col) or "").strip().lower()
-                if any(word in transaction_type for word in ("credit", "deposit", "income", "salary", "refund", "reversal")):
+                credit_types = {"cr", "credit", "deposit", "income", "salary", "refund", "reversal"}
+                if transaction_type in credit_types or any(
+                    word in transaction_type for word in ("deposit", "income", "salary", "refund", "reversal")
+                ):
                     skipped += 1
                     continue
             if not description:
@@ -280,27 +285,53 @@ async def import_expenses_csv(
             if category not in VALID_EXPENSE_CATEGORIES:
                 category = "other"
 
-            # Skip duplicate lines within this upload. Existing rows are not deduplicated
-            # by amount/date/merchant because identical real purchases can occur.
-            signature = (transaction_date.isoformat(), round(amount, 2), description.casefold(), category)
-            if signature in seen:
+            # Persist a stable fingerprint so uploading the same statement twice does not
+            # double-count it. A bank reference disambiguates identical purchases.
+            reference = (row.get(reference_col) or "").strip() if reference_col else ""
+            fingerprint_parts = (
+                reference.casefold() if reference else "",
+                transaction_date.isoformat(),
+                f"{round(amount, 2):.2f}",
+                description.casefold(),
+                category,
+            )
+            fingerprint = hashlib.sha256("\\x1f".join(fingerprint_parts).encode("utf-8")).hexdigest()
+            if fingerprint in seen:
                 skipped += 1
                 continue
-            seen.add(signature)
+            seen.add(fingerprint)
+            if db.mode == "sqlite":
+                exists = db.fetchone(
+                    "SELECT id FROM expenses WHERE user_id = ? AND source_fingerprint = ?",
+                    (user_id, fingerprint),
+                )
+            else:
+                existing = (
+                    db.client.table("expenses").select("id")
+                    .eq("user_id", user_id).eq("source_fingerprint", fingerprint)
+                    .limit(1).execute()
+                )
+                exists = existing.data[0] if existing.data else None
+            if exists:
+                skipped += 1
+                continue
+
             expense_id = str(uuid.uuid4())
             data = {
                 "id": expense_id, "user_id": user_id,
                 "date": transaction_date.isoformat(), "amount": round(amount, 2),
                 "category": category, "description": description,
-                "data_source": "bank_csv_import", "created_at": now, "updated_at": now,
+                "data_source": "bank_csv_import", "source_fingerprint": fingerprint,
+                "created_at": now, "updated_at": now,
             }
             if db.mode == "sqlite":
                 db.execute(
                     """INSERT INTO expenses
-                    (id, user_id, date, amount, category, description, data_source, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (id, user_id, date, amount, category, description, data_source,
+                     source_fingerprint, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (data["id"], user_id, data["date"], data["amount"], data["category"],
-                     data["description"], data["data_source"], now, now),
+                     data["description"], data["data_source"], fingerprint, now, now),
                 )
             else:
                 db.client.table("expenses").insert(data).execute()

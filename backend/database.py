@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     amount REAL NOT NULL CHECK(amount >= 0),
     category TEXT NOT NULL CHECK(category IN ('convenience_food','groceries','transport','shopping','bills','utilities','entertainment','healthcare','clothing','education','personal_care','dining_out','subscriptions','household','other')),
     description TEXT DEFAULT '', data_source TEXT NOT NULL DEFAULT 'user_entered',
+    source_fingerprint TEXT,
     created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES profiles(user_id)
 );
@@ -142,6 +143,15 @@ def init_db() -> None:
     if isinstance(db, SQLiteDB):
         with db.connection() as conn:
             conn.executescript(SQLITE_SCHEMA)
+            # Upgrade existing local databases without requiring users to delete their data.
+            expense_columns = {row["name"] for row in conn.execute("PRAGMA table_info(expenses)").fetchall()}
+            if "source_fingerprint" not in expense_columns:
+                conn.execute("ALTER TABLE expenses ADD COLUMN source_fingerprint TEXT")
+            conn.execute(
+                """CREATE UNIQUE INDEX IF NOT EXISTS idx_expenses_user_source_fingerprint
+                   ON expenses(user_id, source_fingerprint)
+                   WHERE source_fingerprint IS NOT NULL"""
+            )
         logger.info("SQLite schema initialised")
     else:
         logger.info("Supabase mode: apply versioned SQL migrations before deployment")
