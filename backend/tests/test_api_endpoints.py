@@ -221,3 +221,38 @@ def test_csv_import_rejects_missing_required_columns(client: TestClient, fresh_a
         headers={**fresh_auth_headers, "Content-Type": "text/csv"},
     )
     assert response.status_code == 400
+
+
+def test_personal_session_is_unique_and_isolated(client: TestClient, demo_auth_headers: dict):
+    first = client.post("/api/v1/demo/personal-session")
+    second = client.post("/api/v1/demo/personal-session")
+    assert first.status_code == 200
+    assert second.status_code == 200
+    a = first.json()
+    b = second.json()
+    assert a["user_id"] != b["user_id"]
+    assert a["user_id"].startswith("demo_session_")
+    assert a["expires_in_days"] == 90
+
+    headers_a = {"Authorization": f"Bearer {a['access_token']}"}
+    headers_b = {"Authorization": f"Bearer {b['access_token']}"}
+    created = client.post(
+        "/api/v1/expenses",
+        json={"date": "2026-10-10", "amount": 89.0, "category": "convenience_food", "description": "User-import test"},
+        headers=headers_a,
+    )
+    assert created.status_code == 201
+    assert created.json()["user_id"] == a["user_id"]
+    assert client.get("/api/v1/expenses", headers=headers_b).json() == []
+    assert client.get("/api/v1/expenses", headers=demo_auth_headers).status_code == 200
+
+
+def test_personal_session_endpoint_disabled_outside_demo_mode(client: TestClient):
+    from config import settings
+    original = settings.ENVIRONMENT
+    try:
+        settings.ENVIRONMENT = "production"
+        response = client.post("/api/v1/demo/personal-session")
+        assert response.status_code == 403
+    finally:
+        settings.ENVIRONMENT = original
