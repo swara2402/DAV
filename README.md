@@ -60,7 +60,7 @@ Browser (React / TypeScript / Vite)
   ▼
 FastAPI Backend (Python 3.11)
   │
-  │  SQLAlchemy ORM
+  │  Database access wrapper (sqlite3 / supabase-py)
   ▼
 SQLite (development) / Supabase PostgreSQL (production)
   ▲
@@ -79,12 +79,12 @@ See [`docs/architecture.md`](docs/architecture.md) for the full breakdown includ
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `ENVIRONMENT` | `development` or `production` | ✅ Required |
-| `SECRET_KEY` | JWT signing secret (generate with `openssl rand -hex 32`) | ✅ Required |
+| `DEMO_JWT_SECRET` | Demo-token signing secret, at least 32 characters in production | Development/demo or production config |
 | `SUPABASE_URL` | Supabase project URL | Production only |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (backend only, never frontend) | Production only |
-| `DATABASE_URL` | Override default DB path (optional in dev) | Optional |
+| `SQLITE_PATH` | SQLite database path for development/demo | Optional |
 | `CORS_ORIGINS` | Comma-separated list of allowed origins | Optional (defaults to localhost) |
-| `MIN_QUALIFYING_WEEKS_THRESHOLD` | Minimum overdue tasks to classify a qualifying week (default: `3`) | Optional |
+| `OVERDUE_THRESHOLD` | Minimum overdue tasks to classify a qualifying week (default: `3`) | Optional |
 
 ### Frontend (`frontend/.env`)
 
@@ -106,7 +106,7 @@ cd backend
 python3 -m pytest tests/ -v --tb=short
 ```
 
-The test suite covers the insight engine, API CRUD endpoints, authentication, and cross-user isolation. See [`docs/testing_and_evaluation.md`](docs/testing_and_evaluation.md) for full coverage details.
+The test suite is intended to cover the insight engine, API CRUD endpoints, authentication, and cross-user isolation. GitHub Actions runs the automated checks; a green run is required before treating a commit as verified. See [`docs/testing_and_evaluation.md`](docs/testing_and_evaluation.md) for full coverage details.
 
 ### Frontend (TypeScript type check via build)
 
@@ -133,9 +133,11 @@ npm run build
 2. Select the repo; set **Root Directory** to `backend`.
 3. Add environment variables:
    - `ENVIRONMENT=production`
-   - `SECRET_KEY=<generated secret>`
+   - `DEMO_JWT_SECRET=<unique 32+ character secret>`
    - `SUPABASE_URL=<your Supabase project URL>`
    - `SUPABASE_SERVICE_ROLE_KEY=<service role key>`
+   - `SUPABASE_ANON_KEY=<public anon key>`
+   - `SUPABASE_JWT_SECRET=<legacy HS256 JWT secret only, if your project still uses HS256>`
    - `CORS_ORIGINS=https://<your-vercel-app>.vercel.app`
 4. Set the start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
 5. Deploy.
