@@ -105,11 +105,12 @@ async def create_task(
                 status_code=400,
                 detail="Task creation date cannot be after due date",
             )
-    if comp_str and body.created_at and body.completed_at:
-        if body.completed_at < body.created_at.date():
+    if comp_str:
+        effective_created_date = datetime.fromisoformat(created_str.replace("Z", "+00:00")).date()
+        if body.completed_at and body.completed_at < effective_created_date:
             raise HTTPException(
                 status_code=400,
-                detail="Completion date cannot be before creation date",
+                detail="Completion date cannot be before task creation date",
             )
 
     data = {
