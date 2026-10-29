@@ -1,6 +1,10 @@
 # Life, Decoded ✨
 ### Understand the patterns behind your everyday choices.
 
+![LifeDecoded dashboard concept preview](docs/images/lifedecoded-dashboard.svg)
+
+<sub>Dashboard concept preview with illustrative sample values. This is a visual mockup, not a live screenshot of the application.</sub>
+
 Life, Decoded is a personal insight dashboard that helps people explore how their workload and spending habits relate. Rather than showing totals alone, it explains how each insight is calculated and provides evidence users can inspect.
 
 > **See the pattern. Check the evidence. Make your own interpretation.**
@@ -92,7 +96,7 @@ Activate the environment:
 source .venv/bin/activate
 
 # Windows PowerShell
-.venv\Scripts\Activate.ps1
+.venv\\Scripts\\Activate.ps1
 ~~~
 
 Install dependencies and start the API:
