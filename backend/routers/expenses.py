@@ -221,6 +221,7 @@ async def import_expenses_csv(
     debit_col = next((normalized[k] for k in ("debit", "withdrawal", "withdrawals", "debit_amount") if k in normalized), None)
     credit_col = next((normalized[k] for k in ("credit", "deposit", "deposits", "credit_amount") if k in normalized), None)
     category_col = next((normalized[k] for k in ("category", "expense_category") if k in normalized), None)
+    type_col = next((normalized[k] for k in ("type", "transaction_type", "dr_cr", "debit_credit", "transaction_kind") if k in normalized), None)
 
     if not date_col or not desc_col or not (amount_col or debit_col):
         raise HTTPException(
@@ -245,6 +246,11 @@ async def import_expenses_csv(
         try:
             date_value = (row.get(date_col) or "").strip()
             description = (row.get(desc_col) or "").strip()[:500]
+            if type_col:
+                transaction_type = (row.get(type_col) or "").strip().lower()
+                if any(word in transaction_type for word in ("credit", "deposit", "income", "salary", "refund", "reversal")):
+                    skipped += 1
+                    continue
             if not description:
                 description = "Bank statement transaction"
             # A separate debit column is the safest choice for bank exports.
