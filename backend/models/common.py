@@ -29,15 +29,6 @@ VALID_EXPENSE_CATEGORIES = {
     "transport",
     "shopping",
     "bills",
-    "utilities",
-    "entertainment",
-    "healthcare",
-    "clothing",
-    "education",
-    "personal_care",
-    "dining_out",
-    "subscriptions",
-    "household",
     "other",
 }
 
