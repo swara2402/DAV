@@ -115,7 +115,6 @@ async def create_action(
 @router.get("", response_model=list[ActionOut])
 async def list_actions(
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
