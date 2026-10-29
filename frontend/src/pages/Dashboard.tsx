@@ -82,6 +82,10 @@ export const Dashboard: React.FC = () => {
       setImportMessage('Please choose a CSV export from your bank or card provider.')
       return
     }
+    if (file.size > 5 * 1024 * 1024) {
+      setImportMessage('This CSV is larger than 5 MB. Export a smaller date range and try again.')
+      return
+    }
     setIsImporting(true)
     setImportMessage(null)
     try {
