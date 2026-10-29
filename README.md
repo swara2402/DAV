@@ -165,7 +165,7 @@ Do not upload sensitive statements to a public demo deployment. For a deployed p
 
 A reproducible importer is available for the genuine **India Time Use Survey 2024** public release. See [Real public-data ingestion](docs/real_public_data.md) and run `python scripts/import_public_timeuse.py` from `backend/` to download, validate, summarize, and record provenance for the source data.
 
-This is a separate research dataset, not personal finance data. It contains activity diary records, not linked bank transactions and overdue-task histories, so it must not be used to fabricate expense/task rows or claim the app's task-overload/spending hypothesis is validated. Maya and Arjun remain explicitly synthetic benchmark personas. The dashboard's personalized insight engine still requires genuine linked records entered by a user or obtained through a legitimate, consented integration.
+This is a separate research dataset, not personal finance data. It contains activity diary records, not linked bank transactions and overdue-task histories, so it must not be used to fabricate expense/task rows or claim the app's task-overload/spending hypothesis is validated. Maya and Arjun remain explicitly synthetic benchmark personas. The dashboard's personalized insight engine still requires genuine linked records entered by a user or obtained through a legitimate, consented integration. The public context is a survey-weighted mean duration per recorded activity slot, not average daily work hours or a personalized measurement. After updating the importer, regenerate the local summary with `python scripts/import_public_timeuse.py` from `backend/`.
 
 ## Known Limitations
 
