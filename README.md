@@ -132,12 +132,12 @@ npm run build
 1. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub**.
 2. Select the repo; set **Root Directory** to `backend`.
 3. Add environment variables:
-   - `ENVIRONMENT=production`
+   - `ENVIRONMENT=production`\n   - `VITE_DEMO_MODE=false`\n   - `DEMO_JWT_SECRET=<unique random 32+ character secret>`
    - `DEMO_JWT_SECRET=<unique 32+ character secret>`
    - `SUPABASE_URL=<your Supabase project URL>`
    - `SUPABASE_SERVICE_ROLE_KEY=<service role key>`
-   - `SUPABASE_ANON_KEY=<public anon key>`
-   - `SUPABASE_JWT_SECRET=<legacy HS256 JWT secret only, if your project still uses HS256>`
+   - `SUPABASE_ANON_KEY=<public anon key, if required by your deployment>`
+   - `SUPABASE_JWT_SECRET=<legacy HS256 JWT secret only, if your project still uses HS256>`\n\n> Production JWT verification uses the project Auth JWKS endpoint for asymmetric keys. Never use the public anon key as a JWT signing secret. Apply SQL migrations in order in Supabase before enabling production traffic.
    - `CORS_ORIGINS=https://<your-vercel-app>.vercel.app`
 4. Set the start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
 5. Deploy.
