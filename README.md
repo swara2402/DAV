@@ -165,7 +165,7 @@ Production JWT verification uses the project's Auth JWKS endpoint for asymmetric
 | [`docs/privacy_and_security.md`](docs/privacy_and_security.md) | Auth, RLS, secret management, data reset |
 | [`docs/testing_and_evaluation.md`](docs/testing_and_evaluation.md) | Test coverage, manual verification steps |
 | [`docs/demo_script.md`](docs/demo_script.md) | 60-second walkthrough for demos |
-| [`docs/research_paper_outline.md`](docs/research_paper_outline.md) | Academic paper outline targeting CHI / UbiComp |
+| [`docs/research_paper_outline.md`](docs/research_paper_outline.md) | Academic paper outline targeting CHI / UbiComp |\n| [`docs/public_datasets.md`](docs/public_datasets.md) | Public research datasets and safe integration rules |
 
 ---
 
