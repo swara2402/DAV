@@ -89,7 +89,7 @@ def summarize(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         weight_sum=("weight", "sum"),
     ).reset_index()
     summary["weighted_mean_hours_per_record"] = (
-        summary["weighted_hours_sum"] / summary["weight_sum"].replace(0, pd.NA)
+        summary["weighted_hours_sum"] / summary["weight_sum"].where(summary["weight_sum"] != 0)
     )
     summary = summary.drop(columns=["weighted_hours_sum", "weight_sum"])
     summary = summary.sort_values(
