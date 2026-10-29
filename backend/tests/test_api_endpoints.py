@@ -227,6 +227,34 @@ def test_csv_import_adds_real_transactions_only_to_authenticated_user(client: Te
     assert len(imported_after_repeat) == 2
 
 
+
+def test_csv_import_skips_negative_signed_amounts_and_bounds_csv_fields(client: TestClient, fresh_auth_headers: dict):
+    csv_text = (
+        "Date,Description,Amount\\n"
+        "2026-10-01,Coffee shop,120.00\\n"
+        "2026-10-02,Salary,-50000.00\\n"
+    )
+    response = client.post(
+        "/api/v1/expenses/import-csv",
+        content=csv_text,
+        headers={**fresh_auth_headers, "Content-Type": "text/csv"},
+    )
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["imported"] == 1
+    assert result["skipped"] == 1
+    expenses = client.get("/api/v1/expenses", headers=fresh_auth_headers).json()
+    assert not any(row["amount"] == 50000 for row in expenses)
+
+
+def test_csv_import_rejects_oversized_body_before_parsing(client: TestClient, fresh_auth_headers: dict):
+    response = client.post(
+        "/api/v1/expenses/import-csv",
+        content=b"x" * (5 * 1024 * 1024 + 1),
+        headers={**fresh_auth_headers, "Content-Type": "text/csv"},
+    )
+    assert response.status_code == 413
+
 def test_csv_import_rejects_missing_required_columns(client: TestClient, fresh_auth_headers: dict):
     response = client.post(
         "/api/v1/expenses/import-csv",
