@@ -430,7 +430,9 @@ def calculate_overdue_convenience_insight(
     qualifying_std = float(np.std(qualifying_filtered, ddof=1)) if len(qualifying_filtered) > 1 else 0.0
     baseline_std = float(np.std(baseline_filtered, ddof=1)) if len(baseline_filtered) > 1 else 0.0
 
-    from scipy.stats import t as student_t\n\n    # Standard error of the mean (for uncertainty estimates)
+    from scipy.stats import t as student_t
+
+    # Standard error of the mean (for uncertainty estimates)
     qualifying_sem = qualifying_std / np.sqrt(len(qualifying_filtered)) if len(qualifying_filtered) > 1 else 0.0
     baseline_sem = baseline_std / np.sqrt(len(baseline_filtered)) if len(baseline_filtered) > 1 else 0.0
 
