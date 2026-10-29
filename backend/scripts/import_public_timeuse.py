@@ -108,7 +108,8 @@ def summarize(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     summary["weighted_mean_hours_per_record"] = (
         summary["weighted_hours_sum"] / summary["weight_sum"].where(summary["weight_sum"] != 0)
     )
-    summary = summary.drop(columns=["weighted_hours_sum", "weight_sum"])
+    # Keep additive weighted totals so downstream aggregation remains statistically
+    # correct across activity categories, days, age bands, and states.
     summary = summary.sort_values(
         ["state", "age_band", "activity_code", "day_of_week"],
         na_position="last",
