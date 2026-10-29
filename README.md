@@ -132,31 +132,50 @@ npm run build
 
 ---
 
-## Deployment
+## Deployment (Supabase + free-tier hosting)
 
-### Frontend → Vercel
+The production architecture keeps **Supabase for Auth and PostgreSQL**, deploys the existing Python/FastAPI insight engine to Render, and serves the Vite frontend from Vercel. This preserves the project's Pandas/NumPy/SciPy calculations instead of rewriting the research logic into a different runtime. Railway is not required.
 
-1. Push your repository to GitHub.
-2. Go to [vercel.com](https://vercel.com) → **New Project** → import your repo.
-3. Set **Root Directory** to `frontend`.
-4. Add environment variable: `VITE_API_BASE_URL=<your Railway backend URL>`.
-5. Deploy. Vercel auto-detects Vite.
+### 1. Supabase
 
-### Backend → Railway
+1. Open the project dashboard and confirm migrations `001` through `008` are applied in order.
+2. In **Authentication → URL Configuration**, set the production Site URL to the Vercel URL once it exists, and add both `https://YOUR-VERCEL-DOMAIN.vercel.app/**` and `http://localhost:5173/**` to Redirect URLs.
+3. Keep RLS enabled on all user-data tables. Use the publishable key in the frontend only. The service-role key is backend-only and must never be added to Vercel or committed.
 
-1. Create a Railway project and deploy the repository with root directory `backend`.
-2. Set these backend environment variables:
-   - `ENVIRONMENT=production`
+### 2. Backend → Render
+
+This repository includes a `render.yaml` Blueprint for the FastAPI backend.
+
+1. Import this GitHub repository into [Render](https://render.com/) as a **Blueprint** and review the service settings.
+2. Set the environment variables requested by the Blueprint:
+   - `SUPABASE_URL=https://tmyrdnhwmuxrikmtxexb.supabase.co`
+   - `SUPABASE_SERVICE_ROLE_KEY`: the project's server-side service-role/secret key from Supabase, stored only in Render.
+   - `DEMO_JWT_SECRET`: a unique random secret of at least 32 characters.
+   - `CORS_ORIGINS`: the exact HTTPS Vercel origin, with no path or trailing slash (set this after the frontend URL is known).
+   - `ENVIRONMENT=production` and `VITE_DEMO_MODE=false` are set by the Blueprint.
+3. Deploy and verify `https://YOUR-RENDER-SERVICE.onrender.com/health` returns a healthy response. Render's free web services may sleep when idle and take a little time to wake.
+
+### 3. Frontend → Vercel
+
+1. Import `swara2402/DAV` into [Vercel](https://vercel.com/) and set **Root Directory** to `frontend`.
+2. Add these environment variables for the Production environment:
    - `VITE_DEMO_MODE=false`
-   - `DEMO_JWT_SECRET=<unique random secret of at least 32 characters>`
-   - `SUPABASE_URL=<your Supabase project URL>`
-   - `SUPABASE_SERVICE_ROLE_KEY=<server-only service role key>`
-   - `CORS_ORIGINS=https://<your-vercel-app>.vercel.app`
-   - For legacy Supabase projects using HS256 only: `SUPABASE_JWT_SECRET=<legacy JWT secret>`
-3. Use the start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-4. Apply migrations `001_initial_schema.sql`, `002_indexes.sql`, `003_rls_policies.sql`, `004_security_hardening.sql`, `005_expense_category_alignment.sql`, `006_bank_csv_import_source.sql`, and `007_csv_import_idempotency.sql` in order in Supabase before enabling production traffic. Migration 006 permits `bank_csv_import` as an expense provenance value. Migration 007 adds a user-scoped fingerprint and unique index so re-uploading the same statement does not double-count transactions.
+   - `VITE_SUPABASE_URL=https://tmyrdnhwmuxrikmtxexb.supabase.co`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`: the browser-safe publishable key from Supabase.
+   - `VITE_API_BASE_URL=https://YOUR-RENDER-SERVICE.onrender.com`
+3. Deploy. After the Vercel URL is known, add that exact origin to Render's `CORS_ORIGINS`, update Supabase Auth Redirect URLs, then redeploy the backend and frontend if needed.
 
-Production JWT verification uses the project's Auth JWKS endpoint for asymmetric signing keys. Never use the public anon key as a JWT signing secret. The API uses a service-role client, which bypasses RLS, so every database query must remain explicitly scoped to the authenticated user's `user_id`.
+### 4. Verify before sharing
+
+- Open the deployed `/health` endpoint.
+- Register a test account and confirm email confirmation/redirect behavior matches the Supabase Auth settings.
+- Sign in, create an expense and task, refresh the page, and confirm they persist.
+- Confirm dashboard/insight endpoints work with sufficient data and correctly show `insufficient_data` when the evidence threshold is not met.
+- Test that a second account cannot access the first account's records.
+- Run the GitHub Actions CI checks and review Supabase database/security advisors before treating the deployment as production-ready.
+
+**Important:** the repository configuration prepares the deployment path but does not itself create hosting accounts or configure their dashboard secrets. Do not share a public URL as production-ready until the checks above pass.
+
 ---
 
 ## Import Your Own Real Transactions
