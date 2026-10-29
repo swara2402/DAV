@@ -110,6 +110,48 @@ def test_cross_user_isolation(
     assert other_del.status_code == 404
 
 
+
+def test_cross_user_isolation_for_tasks_and_actions(
+    client: TestClient,
+    demo_auth_headers: dict,
+    fresh_auth_headers: dict,
+):
+    """Task and action endpoints must not expose another user's records."""
+    task_resp = client.post(
+        "/api/v1/tasks",
+        json={"title": "Private task", "due_date": "2026-11-25", "category": "personal"},
+        headers=demo_auth_headers,
+    )
+    assert task_resp.status_code == 201, task_resp.text
+    task_id = task_resp.json()["id"]
+
+    assert client.get(f"/api/v1/tasks/{task_id}", headers=fresh_auth_headers).status_code == 404
+    assert client.put(
+        f"/api/v1/tasks/{task_id}",
+        json={"title": "Tampered task"},
+        headers=fresh_auth_headers,
+    ).status_code == 404
+    assert client.delete(f"/api/v1/tasks/{task_id}", headers=fresh_auth_headers).status_code == 404
+
+    action_resp = client.post(
+        "/api/v1/actions",
+        json={"action_text": "Private follow-up action"},
+        headers=demo_auth_headers,
+    )
+    assert action_resp.status_code == 201, action_resp.text
+    action_id = action_resp.json()["id"]
+
+    assert client.get(
+        f"/api/v1/actions/{action_id}/followup",
+        headers=fresh_auth_headers,
+    ).status_code == 404
+    other_actions = client.get("/api/v1/actions", headers=fresh_auth_headers)
+    assert other_actions.status_code == 200
+    assert all(action["id"] != action_id for action in other_actions.json())
+
+    # Clean up using the owning user so the test leaves no extra records.
+    assert client.delete(f"/api/v1/tasks/{task_id}", headers=demo_auth_headers).status_code == 204
+
 def test_task_crud_and_completion(client: TestClient, fresh_auth_headers: dict):
     # 1. Create task
     task_resp = client.post(
