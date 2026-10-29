@@ -32,6 +32,7 @@ export interface Expense {
   amount: number
   category: ExpenseCategory
   description: string | null
+  data_source?: string
   created_at: string
   updated_at: string
 }
