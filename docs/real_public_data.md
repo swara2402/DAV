@@ -17,7 +17,7 @@ python scripts/import_public_timeuse.py
 
 This downloads the release and writes two local outputs under `data/public/india-time-use-2024/`:
 
-- `activity_summary.csv`: state, age band, activity, location, payment status, and day-of-week summaries, including source-row counts, respondent counts, and survey-weighted mean activity hours per record.
+- `activity_summary.csv`: state, age band, activity, location, payment status, and day-of-week summaries. It retains additive weighted-hour and survey-weight totals so later aggregation does not take an unweighted mean of group means.
 - `manifest.json`: source URL, retrieval time, source/valid/excluded row counts, columns, method, license notes, and limitations.
 - `timeuse.csv.gz`: the downloaded source archive, kept locally and not committed to this repository.
 
@@ -37,4 +37,4 @@ The existing Maya/Arjun demo fixtures remain synthetic benchmark fixtures and mu
 
 ## Output interpretation
 
-`weighted_mean_hours_per_record` is the survey-multiplier-weighted mean duration for rows in each grouping, not a daily average for an individual. Use the official survey documentation to account for the survey design before making population estimates. Results are descriptive and do not establish causality.
+`weighted_mean_hours_per_record` is the survey-multiplier-weighted mean duration for rows in each grouping, not a daily average for an individual. The API's `avg_activity_record_hours` is computed as the sum of weighted hours divided by the sum of survey multipliers across eligible age-band records. It is deliberately labelled as a mean activity-record duration, not 'daily work hours'. The loader excludes the 0–17 and 60+ age bands from its 18–59 summary and declines to load older summaries that lack additive weighted totals. After deploying a new importer version, rerun `python scripts/import_public_timeuse.py` to regenerate the local summary. Use official survey documentation to account for the survey design before making population estimates. Results are descriptive and do not establish causality.
