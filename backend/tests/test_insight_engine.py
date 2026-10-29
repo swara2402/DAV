@@ -216,3 +216,19 @@ def test_no_hardcoded_ratio():
     assert maya_res["ratio"] != arjun_res["ratio"]
     assert maya_res["qualifying_avg"] != arjun_res["qualifying_avg"]
 
+
+
+
+def test_task_created_after_snapshot_is_not_counted_historically():
+    monday = date(2026, 8, 3)
+    expenses = pd.DataFrame(columns=["date", "amount", "category"])
+    tasks = pd.DataFrame([{
+        "id": "future-task",
+        "title": "Task created after the snapshot",
+        "due_date": date(2026, 8, 7),
+        "completed_at": None,
+        "created_at": "2026-08-10T09:00:00+05:30",
+    }])
+    result = _compute_week(monday, expenses, tasks, overdue_threshold=1)
+    assert result["overdue_count"] == 0
+    assert result["is_qualifying"] is False
