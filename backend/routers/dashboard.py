@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 
-from auth import get_current_user, require_non_demo
+from auth import get_current_user
 from database import get_db
 from services.dashboard_service import get_dashboard_summary
 
@@ -17,7 +17,6 @@ async def dashboard_summary(
     start_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
     end_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]

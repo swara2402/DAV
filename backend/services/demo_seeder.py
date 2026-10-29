@@ -39,8 +39,7 @@ def _now_iso() -> str:
 
 def _load_csv(path: Path) -> list[dict]:
     if not path.exists():
-        logger.warning(f"CSV not found: {path}")
-        return []
+        raise FileNotFoundError(f"Required synthetic dataset is missing: {path}")
     rows = []
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -83,33 +82,34 @@ def seed_persona(user_id: str, persona: str, db: Any) -> dict:
             "record_counts": {},
         }
 
-    # Clear existing data for this user first (idempotency)
-    _clear_user_data(user_id, db)
-
     data_dir = settings.data_dir_path
     files = PERSONA_FILES[persona]
+    # Validate inputs before deleting the user's existing demo workspace.
+    for required in files.values():
+        if required and not (data_dir / required).is_file():
+            raise FileNotFoundError(f"Required synthetic dataset is missing: {data_dir / required}")
+
+    _clear_user_data(user_id, db)
     record_counts: dict[str, int] = {}
 
     # Ensure profile exists
     _ensure_profile(user_id, persona, db)
 
-    # Load expenses
-    if files["expenses"]:
-        expense_path = data_dir / files["expenses"]
-        expense_rows = _load_csv(expense_path)
-        count = _insert_expenses(user_id, expense_rows, db)
-        record_counts["expenses"] = count
-    else:
-        record_counts["expenses"] = 0
+    try:
+        if files["expenses"]:
+            expense_rows = _load_csv(data_dir / files["expenses"])
+            record_counts["expenses"] = _insert_expenses(user_id, expense_rows, db)
+        else:
+            record_counts["expenses"] = 0
 
-    # Load tasks
-    if files["tasks"]:
-        task_path = data_dir / files["tasks"]
-        task_rows = _load_csv(task_path)
-        count = _insert_tasks(user_id, task_rows, db)
-        record_counts["tasks"] = count
-    else:
-        record_counts["tasks"] = 0
+        if files["tasks"]:
+            task_rows = _load_csv(data_dir / files["tasks"])
+            record_counts["tasks"] = _insert_tasks(user_id, task_rows, db)
+        else:
+            record_counts["tasks"] = 0
+    except Exception:
+        _clear_user_data(user_id, db)
+        raise
 
     # Record seed run (use migration column names: persona_id and dataset_version)
     now = _now_iso()
@@ -180,8 +180,8 @@ def _insert_expenses(user_id: str, rows: list[dict], db: Any) -> int:
             if hasattr(db, "mode") and db.mode == "sqlite":
                 db.execute(
                     """
-                    INSERT OR IGNORE INTO expenses (id, user_id, date, amount, category, description, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT OR IGNORE INTO expenses (id, user_id, date, amount, category, description, data_source, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         expense_id,
@@ -190,6 +190,7 @@ def _insert_expenses(user_id: str, rows: list[dict], db: Any) -> int:
                         amount,
                         row.get("category", "other"),
                         row.get("description", ""),
+                        "demo_synthetic",
                         now,
                         now,
                     ),
@@ -202,12 +203,14 @@ def _insert_expenses(user_id: str, rows: list[dict], db: Any) -> int:
                     "amount": amount,
                     "category": row.get("category", "other"),
                     "description": row.get("description", ""),
+                    "data_source": "demo_synthetic",
                     "created_at": now,
                     "updated_at": now,
                 }).execute()
             inserted += 1
         except Exception as e:
-            logger.warning(f"Failed to insert expense row: {e} | row={row}")
+            logger.error("Failed to insert synthetic expense row (%s)", type(e).__name__)
+            raise RuntimeError("Failed to insert synthetic expense row") from e
     return inserted
 
 
@@ -231,8 +234,8 @@ def _insert_tasks(user_id: str, rows: list[dict], db: Any) -> int:
             if hasattr(db, "mode") and db.mode == "sqlite":
                 db.execute(
                     """
-                    INSERT OR IGNORE INTO tasks (id, user_id, title, category, due_date, completed_at, created_at, db_created_at, db_updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT OR IGNORE INTO tasks (id, user_id, title, category, due_date, completed_at, created_at, db_created_at, db_updated_at, data_source)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         task_id,
@@ -244,6 +247,7 @@ def _insert_tasks(user_id: str, rows: list[dict], db: Any) -> int:
                         created_at,
                         now,
                         now,
+                        "demo_synthetic",
                     ),
                 )
             else:
@@ -255,12 +259,14 @@ def _insert_tasks(user_id: str, rows: list[dict], db: Any) -> int:
                     "due_date": due_date,
                     "completed_at": completed_at,
                     "created_at": created_at,
+                    "data_source": "demo_synthetic",
                     "db_created_at": now,
                     "db_updated_at": now,
                 }).execute()
             inserted += 1
         except Exception as e:
-            logger.warning(f"Failed to insert task row: {e} | row={row}")
+            logger.error("Failed to insert synthetic task row (%s)", type(e).__name__)
+            raise RuntimeError("Failed to insert synthetic task row") from e
     return inserted
 
 

@@ -6,7 +6,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from auth import get_current_user, require_non_demo
+from auth import get_current_user
 from database import get_db
 from models.task import TaskCreate, TaskUpdate, TaskComplete, TaskOut
 
@@ -20,23 +20,18 @@ def _now() -> str:
 def _ensure_profile_exists(user_id: str, email: str, db) -> None:
     now = _now()
     if db.mode == "sqlite":
-        row = db.fetchone("SELECT user_id FROM profiles WHERE user_id = ?", (user_id,))
-        if not row:
-            db.execute(
-                "INSERT OR IGNORE INTO profiles (user_id, display_name, selected_persona, db_created_at, db_updated_at) VALUES (?, ?, ?, ?, ?)",
-                (user_id, "User", None, now, now),
-            )
+        db.execute(
+            "INSERT OR IGNORE INTO profiles (user_id, display_name, selected_persona, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            (user_id, email.split("@")[0] if email else "User", None, now, now),
+        )
     else:
-        try:
-            db.client.table("profiles").upsert({
-                "user_id": user_id,
-                "display_name": "User",
-                "selected_persona": None,
-                "db_created_at": now,
-                "db_updated_at": now,
-            }).execute()
-        except Exception:
-            pass
+        db.client.table("profiles").upsert({
+            "user_id": user_id,
+            "display_name": email.split("@")[0] if email else "User",
+            "selected_persona": None,
+            "created_at": now,
+            "updated_at": now,
+        }).execute()
 
 
 @router.get("", response_model=list[TaskOut])
@@ -44,7 +39,6 @@ async def list_tasks(
     category: Optional[str] = None,
     status_filter: Optional[str] = Query(None, alias="status", description="completed|open|overdue"),
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -85,7 +79,6 @@ async def list_tasks(
 async def create_task(
     body: TaskCreate,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -98,7 +91,7 @@ async def create_task(
 
     # Validate category is one of the allowed values per migration CHECK constraint
     allowed_categories = {'work', 'personal', 'health', 'finance', 'household'}
-    if body.category not in allowed_categories:
+    if body.category is not None and body.category not in allowed_categories:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid category. Must be one of: {', '.join(allowed_categories)}"
@@ -111,18 +104,19 @@ async def create_task(
                 status_code=400,
                 detail="Task creation date cannot be after due date",
             )
-    if comp_str and body.created_at and body.completed_at:
-        if body.completed_at < body.created_at.date():
+    if comp_str:
+        effective_created_date = datetime.fromisoformat(created_str.replace("Z", "+00:00")).date()
+        if body.completed_at and body.completed_at < effective_created_date:
             raise HTTPException(
                 status_code=400,
-                detail="Completion date cannot be before creation date",
+                detail="Completion date cannot be before task creation date",
             )
 
     data = {
         "id": task_id,
         "user_id": user_id,
         "title": body.title.strip(),
-        "category": body.category,
+        "category": body.category or "personal",
         "due_date": due_str,
         "completed_at": comp_str,
         "created_at": created_str,
@@ -162,7 +156,6 @@ async def create_task(
 async def get_task(
     task_id: str,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -185,7 +178,6 @@ async def update_task(
     task_id: str,
     body: TaskUpdate,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -239,7 +231,6 @@ async def mark_task_complete(
     task_id: str,
     body: TaskComplete,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -277,7 +268,6 @@ async def mark_task_complete(
 async def delete_task(
     task_id: str,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]

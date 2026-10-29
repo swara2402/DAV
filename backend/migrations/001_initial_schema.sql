@@ -1,89 +1,69 @@
--- ============================================================
--- Migration 001: Initial Schema for Life, Decoded
--- ============================================================
--- Designed for both Supabase PostgreSQL (production)
--- and SQLite (development/demo mode via Python backend).
--- SQLite-compatible syntax used. PostgreSQL extensions noted.
--- ============================================================
-
--- Profiles
-CREATE TABLE IF NOT EXISTS profiles (
+-- Life, Decoded canonical Supabase PostgreSQL schema.
+-- SQLite development schema is maintained in backend/database.py separately.
+CREATE TABLE IF NOT EXISTS public.profiles (
     user_id TEXT PRIMARY KEY,
     display_name TEXT NOT NULL DEFAULT 'User',
-    selected_persona TEXT CHECK (selected_persona IN ('maya', 'arjun', 'fresh', NULL)),
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    selected_persona TEXT CHECK (selected_persona IN ('maya','arjun','fresh')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Expenses
-CREATE TABLE IF NOT EXISTS expenses (
-    id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS public.expenses (
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
-    date TEXT NOT NULL,             -- ISO date YYYY-MM-DD
-    amount REAL NOT NULL CHECK (amount >= 0),
-    category TEXT NOT NULL CHECK (
-        category IN ('convenience_food', 'groceries', 'transport', 'shopping', 'bills', 'other')
-    ),
-    description TEXT DEFAULT '',
-    data_source TEXT NOT NULL DEFAULT 'user_entered'
-        CHECK (data_source IN ('user_entered', 'demo_synthetic')),
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    date DATE NOT NULL,
+    amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
+    category TEXT NOT NULL CHECK (category IN ('convenience_food','groceries','transport','shopping','bills','other')),
+    description TEXT NOT NULL DEFAULT '',
+    data_source TEXT NOT NULL DEFAULT 'user_entered' CHECK (data_source IN ('user_entered','demo_synthetic')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Tasks
-CREATE TABLE IF NOT EXISTS tasks (
-    id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS public.tasks (
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     title TEXT NOT NULL,
-    created_at TEXT NOT NULL,       -- ISO date YYYY-MM-DD (when task was created by user)
-    due_date TEXT NOT NULL,         -- ISO date YYYY-MM-DD
-    completed_at TEXT DEFAULT NULL, -- ISO date YYYY-MM-DD, NULL if incomplete
-    category TEXT NOT NULL DEFAULT 'personal' CHECK (
-        category IN ('work', 'personal', 'health', 'finance', 'household')
-    ),
-    data_source TEXT NOT NULL DEFAULT 'user_entered'
-        CHECK (data_source IN ('user_entered', 'demo_synthetic')),
-    db_created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-    db_updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    created_at TIMESTAMPTZ NOT NULL,
+    due_date DATE NOT NULL,
+    completed_at DATE,
+    category TEXT NOT NULL DEFAULT 'personal' CHECK (category IN ('work','personal','health','finance','household')),
+    data_source TEXT NOT NULL DEFAULT 'user_entered' CHECK (data_source IN ('user_entered','demo_synthetic')),
+    db_created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    db_updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Insights (computed results cache)
-CREATE TABLE IF NOT EXISTS insights (
-    id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS public.insights (
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     insight_type TEXT NOT NULL DEFAULT 'overdue_convenience_correlation',
-    status TEXT NOT NULL CHECK (status IN ('sufficient', 'insufficient_data', 'error')),
-    computed_result TEXT NOT NULL,  -- JSON string
-    observation_start TEXT,
-    observation_end TEXT,
+    status TEXT NOT NULL CHECK (status IN ('sufficient','insufficient_data','error')),
+    computed_result JSONB NOT NULL,
+    observation_start DATE,
+    observation_end DATE,
     engine_version TEXT NOT NULL DEFAULT '1.0.0',
     data_source TEXT NOT NULL DEFAULT 'user_entered',
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Insight Actions (user tried-it records)
-CREATE TABLE IF NOT EXISTS insight_actions (
-    id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS public.insight_actions (
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     insight_id TEXT NOT NULL,
     action_text TEXT NOT NULL,
-    tried_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-    followup_window_days INTEGER NOT NULL DEFAULT 28,
-    followup_status TEXT NOT NULL DEFAULT 'pending'
-        CHECK (followup_status IN ('pending', 'sufficient_data', 'insufficient_data')),
-    outcome_metrics TEXT DEFAULT NULL,  -- JSON string when computed
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    tried_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    followup_window_days INTEGER NOT NULL DEFAULT 28 CHECK (followup_window_days > 0),
+    followup_status TEXT NOT NULL DEFAULT 'pending' CHECK (followup_status IN ('pending','sufficient_data','insufficient_data')),
+    outcome_metrics JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Demo Seed Runs (prevents duplicate seeding)
-CREATE TABLE IF NOT EXISTS demo_seed_runs (
-    id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS public.demo_seed_runs (
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
-    persona_id TEXT NOT NULL CHECK (persona_id IN ('maya', 'arjun', 'fresh')),
+    persona_id TEXT NOT NULL CHECK (persona_id IN ('maya','arjun','fresh')),
     dataset_version TEXT NOT NULL DEFAULT 'v1.0',
-    seeded_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    seeded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (user_id, persona_id, dataset_version)
 );
-

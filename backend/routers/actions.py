@@ -4,11 +4,12 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from auth import get_current_user, require_non_demo
+from auth import get_current_user
 from database import get_db
 
 router = APIRouter(prefix="/api/v1/actions", tags=["actions"])
@@ -16,6 +17,19 @@ router = APIRouter(prefix="/api/v1/actions", tags=["actions"])
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _observed_weeks(rows: list[dict], start: date, end: date) -> set[date]:
+    """Distinct Monday-start weeks with at least one record in [start, end)."""
+    weeks: set[date] = set()
+    for row in rows:
+        try:
+            day = date.fromisoformat(str(row["date"])[:10])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if start <= day < end:
+            weeks.add(day - timedelta(days=day.weekday()))
+    return weeks
 
 
 class ActionCreate(BaseModel):
@@ -55,24 +69,19 @@ class FollowupOutcome(BaseModel):
 async def create_action(
     body: ActionCreate,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
     action_id = str(uuid.uuid4())
     now = _now()
 
-    # Validate insight_id is provided (required per migration)
-    if not body.insight_id:
-        raise HTTPException(
-            status_code=400,
-            detail="insight_id is required to create an action"
-        )
+    # A manual action can exist without a cached insight; keep the DB contract non-null.
+    insight_id = body.insight_id or "manual"
 
     data = {
         "id": action_id,
         "user_id": user_id,
-        "insight_id": body.insight_id,
+        "insight_id": insight_id,
         "action_text": body.action_text.strip(),
         "tried_at": now,
         "followup_window_days": 28,
@@ -91,7 +100,7 @@ async def create_action(
             (
                 action_id,
                 user_id,
-                body.insight_id,
+                insight_id,
                 body.action_text.strip(),
                 now,
                 28,
@@ -120,7 +129,6 @@ async def create_action(
 @router.get("", response_model=list[ActionOut])
 async def list_actions(
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -151,7 +159,6 @@ async def list_actions(
 async def get_action_followup(
     action_id: str,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -171,7 +178,7 @@ async def get_action_followup(
     action_datetime = action["tried_at"].replace("Z", "+00:00") if "Z" in action["tried_at"] else action["tried_at"]
     created_at_dt = datetime.fromisoformat(action_datetime)
     created_date = created_at_dt.date()
-    today = date.today()
+    today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
     days_elapsed = (today - created_date).days
     followup_window_days = action.get("followup_window_days", 28)
 
@@ -197,28 +204,29 @@ async def get_action_followup(
     if db.mode == "sqlite":
         post_rows = db.fetchall(
             """
-            SELECT amount FROM expenses
+            SELECT amount, date FROM expenses
             WHERE user_id = ?
               AND category = 'convenience_food'
               AND date >= ?
-              AND date <= ?
+              AND date < ?
             """,
             (user_id, created_date.isoformat(), followup_end.isoformat()),
         )
     else:
         resp = (
             db.client.table("expenses")
-            .select("amount")
+            .select("amount,date")
             .eq("user_id", user_id)
             .eq("category", "convenience_food")
             .gte("date", created_date.isoformat())
-            .lte("date", followup_end.isoformat())
+            .lt("date", followup_end.isoformat())
             .execute()
         )
         post_rows = resp.data or []
 
-    if len(post_rows) < 4:
-        # Update the action's followup_status to insufficient_data
+    followup_weeks = _observed_weeks(post_rows, created_date, followup_end)
+    if len(followup_weeks) < 3:
+        # Require records across multiple weeks, not four transactions clustered together.
         if db.mode == "sqlite":
             db.execute(
                 """
@@ -242,7 +250,7 @@ async def get_action_followup(
             followup_window_days=followup_window_days,
             days_elapsed=days_elapsed,
             status="insufficient_data",
-            message="Follow-up window completed, but fewer than 4 expense records exist in the follow-up period to evaluate outcomes reliably.",
+            message=f"Follow-up window completed, but records cover only {len(followup_weeks)} distinct weeks. At least 3 observed weeks are required; missing logs are not treated as zero spending.",
         )
 
     total_cf = sum(float(r["amount"]) for r in post_rows)
@@ -253,7 +261,7 @@ async def get_action_followup(
     if db.mode == "sqlite":
         baseline_rows = db.fetchall(
             """
-            SELECT amount FROM expenses
+            SELECT amount, date FROM expenses
             WHERE user_id = ?
               AND category = 'convenience_food'
               AND date >= ?
@@ -264,7 +272,7 @@ async def get_action_followup(
     else:
         resp = (
             db.client.table("expenses")
-            .select("amount")
+            .select("amount,date")
             .eq("user_id", user_id)
             .eq("category", "convenience_food")
             .gte("date", baseline_start.isoformat())
@@ -273,10 +281,27 @@ async def get_action_followup(
         )
         baseline_rows = resp.data or []
 
+    baseline_weeks = _observed_weeks(baseline_rows, baseline_start, created_date)
+    if len(baseline_weeks) < 3:
+        if db.mode == "sqlite":
+            db.execute(
+                "UPDATE insight_actions SET followup_status = 'insufficient_data', updated_at = ? WHERE id = ? AND user_id = ?",
+                (_now(), action_id, user_id),
+            )
+        else:
+            db.client.table("insight_actions").update({
+                "followup_status": "insufficient_data", "updated_at": _now()
+            }).eq("id", action_id).eq("user_id", user_id).execute()
+        return FollowupOutcome(
+            action_id=action_id, action_text=action["action_text"], tried_at=action["tried_at"],
+            evaluation_date=today.isoformat(), followup_window_days=followup_window_days,
+            days_elapsed=days_elapsed, status="insufficient_data",
+            message=f"Baseline records cover only {len(baseline_weeks)} distinct weeks. At least 3 observed weeks are required for a comparison.",
+        )
     baseline_total = sum(float(r["amount"]) for r in baseline_rows) if baseline_rows else 0
-    baseline_weekly_avg = round(baseline_total / 4.0, 2) if len(baseline_rows) >= 4 else None
+    baseline_weekly_avg = round(baseline_total / 4.0, 2)
     percent_change = None
-    if baseline_weekly_avg and followup_weekly_avg > 0:
+    if baseline_weekly_avg is not None and baseline_weekly_avg > 0:
         percent_change = round(((followup_weekly_avg - baseline_weekly_avg) / baseline_weekly_avg) * 100, 2)
 
     # Store computed metrics in outcome_metrics column per migration
@@ -313,7 +338,7 @@ async def get_action_followup(
         followup_window_days=followup_window_days,
         days_elapsed=days_elapsed,
         status="sufficient_data",
-        message=f"Follow-up complete across 4 weeks. Baseline convenience food spending averaged ₹{baseline_weekly_avg:,.2f}/week, subsequent spending averaged ₹{followup_weekly_avg:,.2f}/week ({percent_change}% change).",
+        message=(f"Follow-up window has {len(followup_weeks)} observed weeks. " + (f"Baseline averaged ₹{baseline_weekly_avg:,.2f}/week; follow-up averaged ₹{followup_weekly_avg:,.2f}/week ({percent_change}% change)." if baseline_weekly_avg is not None and percent_change is not None else "Not enough baseline coverage to calculate a reliable percentage change.")),
         baseline_cf_avg=baseline_weekly_avg,
         followup_cf_avg=followup_weekly_avg,
         percent_change=percent_change,

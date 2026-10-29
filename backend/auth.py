@@ -1,252 +1,123 @@
-"""
-auth.py — Authentication middleware.
-
-Two modes:
-  - Demo / development: accept a simple demo token ("demo_<persona>")
-    or a signed JWT containing {"user_id": "demo_<persona>", "is_demo": true}.
-  - Production: validate Supabase JWT from Authorization header.
-
-Provides `get_current_user(request)` FastAPI dependency.
-"""
+"""Authentication dependencies for demo and Supabase-backed production."""
 from __future__ import annotations
 
 import logging
+from functools import lru_cache
 from typing import Any
+from urllib.parse import urlparse
 
+import httpx
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
 
 from config import settings
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Known demo personas
-# ---------------------------------------------------------------------------
 DEMO_PERSONAS = {"maya", "arjun", "fresh"}
-DEMO_USER_IDS = {f"demo_{p}" for p in DEMO_PERSONAS}
-
+DEMO_USER_IDS = {f"demo_{persona}" for persona in DEMO_PERSONAS}
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
-# ---------------------------------------------------------------------------
-# Token helpers
-# ---------------------------------------------------------------------------
+def _unauthorized() -> HTTPException:
+    return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token", headers={"WWW-Authenticate": "Bearer"})
+
 
 def _decode_demo_token(token: str) -> dict[str, Any] | None:
-    """
-    Accept:
-      1. Plain token: "demo_maya", "demo_arjun", "demo_fresh" (ONLY IN DEMO MODE)
-      2. Signed JWT with sub = demo_<persona>
-    Returns user dict or None if invalid.
-    """
-    # Only allow demo token authentication if we're actually in demo mode
     if not settings.is_demo:
-        logger.debug("Demo token rejected in non-demo environment")
         return None
-
-    # Plain token shortcut - ONLY enabled in demo/development mode
     if token in DEMO_USER_IDS:
-        persona = token.split("_", 1)[1]
-        logger.debug(f"Valid plain demo token accepted for persona: {persona}")
-        return {
-            "user_id": token,
-            "email": f"{persona}@demo.lifedecoded.app",
-            "is_demo": True,
-        }
-
-    # Try JWT - verify expiration except in pure demo mode
+        persona = token.removeprefix("demo_")
+        return {"user_id": token, "email": f"{persona}@demo.lifedecoded.app", "is_demo": True}
     try:
-        from jose import jwt, JWTError  # type: ignore
-        
-        # First validate header algorithm to prevent alg switching attacks
         header = jwt.get_unverified_header(token)
-        if header.get("alg") not in ["HS256"]:
-            logger.warning(f"Unsupported JWT algorithm in demo token: {header.get('alg')}")
+        if header.get("alg") != "HS256":
             return None
-
-        # In pure demo mode (local development only), allow expired tokens for convenience
-        # In all other environments, verify token expiration
-        verify_exp = not (settings.ENVIRONMENT == "demo")
         payload = jwt.decode(
-            token,
-            settings.DEMO_JWT_SECRET,
-            algorithms=["HS256"],
-            options={
-                "verify_exp": verify_exp,
-                "verify_aud": True,
-                "require_sub": True
-            },
-            audience="demo",
-            issuer="lifedecoded-demo"
+            token, settings.DEMO_JWT_SECRET, algorithms=["HS256"],
+            audience="demo", issuer="lifedecoded-demo",
+            options={"require_sub": True, "require_exp": True},
         )
-        user_id = payload.get("sub", "")
-        if user_id in DEMO_USER_IDS:
-            persona = user_id.split("_", 1)[1]
-            logger.debug(f"Valid signed demo JWT accepted for persona: {persona}")
-            return {
-                "user_id": user_id,
-                "email": payload.get("email", f"{persona}@demo.lifedecoded.app"),
-                "is_demo": True,
-            }
-    except JWTError as e:
-        # Handle expected JWT validation errors gracefully (expired, invalid signature, etc.)
-        logger.debug(f"Demo JWT validation failed (expected in normal usage): {type(e).__name__}")
-        return None
-    except ValueError as e:
-        # Handle value errors from token parsing
-        logger.warning(f"Demo token parsing error: {type(e).__name__}")
-        return None
-    except Exception as e:
-        # Log unexpected errors with full context but don't expose details to clients
-        logger.error(f"Unexpected error in demo token validation: {str(e)}", exc_info=True)
+        user_id = payload.get("sub")
+        if user_id not in DEMO_USER_IDS:
+            return None
+        persona = user_id.removeprefix("demo_")
+        return {"user_id": user_id, "email": payload.get("email", f"{persona}@demo.lifedecoded.app"), "is_demo": True}
+    except (JWTError, ValueError, TypeError):
         return None
 
-    return None
+
+@lru_cache(maxsize=1)
+def _fetch_supabase_jwks() -> dict[str, Any]:
+    """Fetch trusted signing keys from this configured Supabase project's Auth JWKS endpoint."""
+    base = settings.SUPABASE_URL.rstrip("/")
+    if not base or urlparse(base).scheme != "https":
+        raise RuntimeError("Supabase URL is not configured as HTTPS")
+    response = httpx.get(f"{base}/auth/v1/.well-known/jwks.json", timeout=5.0)
+    response.raise_for_status()
+    payload = response.json()
+    keys = payload.get("keys", [])
+    if not isinstance(keys, list) or not keys:
+        raise RuntimeError("Supabase JWKS endpoint returned no signing keys")
+    return {key.get("kid"): key for key in keys if key.get("kid")}
 
 
 def _decode_supabase_token(token: str) -> dict[str, Any]:
-    """
-    Validate Supabase JWT per official Supabase authentication specifications.
-    Extracts the actual JWT secret from the anon key and verifies all critical claims.
-    Raises HTTPException on failure.
-    """
-    from jose import jwt, JWTError  # type: ignore
-    import base64
-    from urllib.parse import urlparse
-
-    if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
-        logger.error("Supabase not properly configured")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Authentication service unavailable",
-        )
-
+    if not settings.SUPABASE_URL:
+        raise HTTPException(status_code=503, detail="Authentication service unavailable")
     try:
-        # Supabase JWT secrets are base64 encoded in the anon key (last segment)
-        # Extract the actual JWT secret from the anon key
-        anon_key_parts = settings.SUPABASE_ANON_KEY.split(".")
-        if len(anon_key_parts) != 3:
-            raise ValueError("Invalid Supabase anon key format")
-            
-        # The secret is the last part, base64 decoded
-        jwt_secret = base64.urlsafe_b64decode(anon_key_parts[2] + "=" * (4 - len(anon_key_parts[2]) % 4))
-        
-        # First extract and validate the JWT header to check algorithm (prevents alg:none attacks)
         header = jwt.get_unverified_header(token)
-        if header.get("alg") not in ["HS256", "RS256"]:
-            logger.warning(f"Unsupported JWT algorithm: {header.get('alg')}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token",
-            )
+        algorithm = header.get("alg")
+        if algorithm == "HS256":
+            # Legacy Supabase JWT secret is a dedicated secret, never the public anon key.
+            if not settings.SUPABASE_JWT_SECRET:
+                logger.error("Received legacy HS256 token but SUPABASE_JWT_SECRET is not configured")
+                raise _unauthorized()
+            key: Any = settings.SUPABASE_JWT_SECRET
+        elif algorithm in {"ES256", "RS256"}:
+            kid = header.get("kid")
+            key = _fetch_supabase_jwks().get(kid)
+            if not key:
+                raise _unauthorized()
+        else:
+            raise _unauthorized()
 
-        # Extract project reference from SUPABASE_URL for issuer validation using proper URL parsing
-        parsed_url = urlparse(settings.SUPABASE_URL)
-        project_ref = parsed_url.netloc.split(".")[0]
-        expected_issuer = f"https://{project_ref}.supabase.co"
-
-        # Validate all standard JWT claims per Supabase's official authentication spec
-        # Official claim requirements: https://supabase.com/docs/guides/auth/auth-jwt#jwt-claims
+        host = urlparse(settings.SUPABASE_URL).netloc
+        issuer = f"https://{host}/auth/v1"
         payload = jwt.decode(
-            token,
-            jwt_secret,
-            algorithms=["HS256"],
-            options={
-                "verify_exp": True,  # Always verify expiration - critical for security
-                "verify_aud": True,  # Enforce audience verification
-                "verify_iss": True,  # Enforce issuer verification
-                "require_sub": True,  # Require subject claim to be present
-                "require_exp": True,
-                "require_iss": True,
-                "require_aud": True,
-            },
-            audience="authenticated",
-            issuer=expected_issuer,
+            token, key, algorithms=[algorithm], audience="authenticated", issuer=issuer,
+            options={"require_sub": True, "require_exp": True, "require_iss": True, "require_aud": True},
         )
-        
-        user_id = payload.get("sub", "")
-        email = payload.get("email", "")
-        exp = payload.get("exp")
-        iat = payload.get("iat")
-        
-        # Additional safety checks even though require_sub is enabled
-        if not user_id:
-            logger.warning("JWT missing required 'sub' claim")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token",
-            )
-        
-        # Ensure time claims exist to prevent replay attacks
-        if exp is None or iat is None:
-            logger.warning("JWT missing required time claims (exp/iat)")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token",
-            )
+        user_id = payload.get("sub")
+        if not isinstance(user_id, str) or not user_id:
+            raise _unauthorized()
+        return {"user_id": user_id, "email": payload.get("email", ""), "is_demo": False}
+    except HTTPException:
+        raise
+    except (JWTError, httpx.HTTPError, ValueError, TypeError, KeyError, RuntimeError) as exc:
+        logger.warning("Supabase JWT validation failed (%s)", type(exc).__name__)
+        raise _unauthorized() from None
 
-        logger.info(f"Successfully authenticated production user: {user_id}")
-        return {"user_id": user_id, "email": email, "is_demo": False}
-    except JWTError as e:
-        logger.warning(f"JWT validation failed: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-    except Exception as e:
-        logger.error(f"Unexpected error during authentication: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-
-
-# ---------------------------------------------------------------------------
-# FastAPI dependency
-# ---------------------------------------------------------------------------
 
 async def get_current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> dict[str, Any]:
-    """
-    Returns {"user_id": str, "email": str, "is_demo": bool}.
-    Raises HTTP 401 if unauthenticated.
-    """
     if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization header required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
+        raise HTTPException(status_code=401, detail="Authorization header required", headers={"WWW-Authenticate": "Bearer"})
     token = credentials.credentials
-
-    # ONLY allow demo tokens if settings.is_demo is True (strict enforcement)
     if settings.is_demo:
-        user = _decode_demo_token(token)
-        if user:
-            return user
-
-    # All other environments (production, staging, development non-demo) must use Supabase tokens
+        demo_user = _decode_demo_token(token)
+        if demo_user:
+            return demo_user
     return _decode_supabase_token(token)
 
 
 def require_demo_mode() -> None:
-    """Dependency that blocks access in production. Ensures demo endpoints are only available in demo mode."""
     if not settings.is_demo:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Demo endpoints are only available in demo mode",
-        )
+        raise HTTPException(status_code=403, detail="Demo endpoints are only available in demo mode")
 
 
 def require_non_demo(user: dict = Depends(get_current_user)) -> None:
-    """Dependency that blocks demo users from accessing production/non-demo endpoints. Fixes SEC-07."""
     if user.get("is_demo"):
-        logger.warning("Demo user attempted to access non-demo endpoint")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Demo users cannot access this endpoint",
-        )
+        raise HTTPException(status_code=403, detail="This endpoint requires an authenticated account")

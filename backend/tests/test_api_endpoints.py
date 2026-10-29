@@ -1,6 +1,8 @@
 """tests/test_api_endpoints.py — API integration and security tests."""
 import pytest
 from fastapi.testclient import TestClient
+from config import settings
+from auth import _decode_demo_token
 
 
 def test_health_check(client: TestClient):
@@ -21,8 +23,8 @@ def test_profile_endpoints(client: TestClient, demo_auth_headers: dict):
     response = client.get("/api/v1/profiles/me", headers=demo_auth_headers)
     assert response.status_code == 200
     profile = response.json()
-    assert profile["id"] == "demo_maya"
-    assert profile["currency"] == "INR"
+    assert profile["user_id"] == "demo_maya"
+    assert profile["display_name"] == "Maya"
 
 
 def test_expense_crud_and_validation(client: TestClient, fresh_auth_headers: dict):
@@ -114,7 +116,7 @@ def test_task_crud_and_completion(client: TestClient, fresh_auth_headers: dict):
         "/api/v1/tasks",
         json={
             "title": "Submit GST return",
-            "due_date": "2026-10-25",
+            "due_date": "2026-11-25",
             "category": "finance",
         },
         headers=fresh_auth_headers,
@@ -127,11 +129,11 @@ def test_task_crud_and_completion(client: TestClient, fresh_auth_headers: dict):
     # 2. Complete task
     comp_resp = client.post(
         f"/api/v1/tasks/{task_id}/complete",
-        json={"completed_at": "2026-10-24"},
+        json={"completed_at": "2026-11-24"},
         headers=fresh_auth_headers,
     )
     assert comp_resp.status_code == 200
-    assert comp_resp.json()["completed_at"] == "2026-10-24"
+    assert comp_resp.json()["completed_at"] == "2026-11-24"
 
     # 3. Clean up
     client.delete(f"/api/v1/tasks/{task_id}", headers=fresh_auth_headers)
@@ -149,7 +151,7 @@ def test_action_and_followup_workflow(client: TestClient, demo_auth_headers: dic
     assert action_resp.status_code == 201
     action = action_resp.json()
     action_id = action["id"]
-    assert action["status"] == "pending"
+    assert action["followup_status"] == "pending"
 
     # 2. Check follow-up immediately -> should be insufficient_data with explanation
     followup_resp = client.get(f"/api/v1/actions/{action_id}/followup", headers=demo_auth_headers)
@@ -179,3 +181,10 @@ def test_demo_seed_idempotency(client: TestClient, demo_auth_headers: dict):
     assert r2.status_code == 200
     assert r2.json()["already_seeded"] is True
 
+
+
+
+def test_demo_token_is_rejected_outside_demo_mode(monkeypatch):
+    monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+    assert settings.is_demo is False
+    assert _decode_demo_token("demo_maya") is None

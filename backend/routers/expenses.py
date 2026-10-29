@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from auth import get_current_user, require_non_demo
+from auth import get_current_user
 from database import get_db
 from models.expense import ExpenseCreate, ExpenseUpdate, ExpenseOut
 
@@ -20,23 +20,18 @@ def _now() -> str:
 def _ensure_profile_exists(user_id: str, email: str, db) -> None:
     now = _now()
     if db.mode == "sqlite":
-        row = db.fetchone("SELECT id FROM profiles WHERE id = ?", (user_id,))
-        if not row:
-            db.execute(
-                "INSERT OR IGNORE INTO profiles (id, email, name, currency, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (user_id, email, user_id, "INR", now, now),
-            )
+        db.execute(
+            "INSERT OR IGNORE INTO profiles (user_id, display_name, selected_persona, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            (user_id, (email.split("@")[0] if email else "User"), None, now, now),
+        )
     else:
-        try:
-            db.client.table("profiles").upsert({
-                "id": user_id,
-                "email": email,
-                "currency": "INR",
-                "created_at": now,
-                "updated_at": now,
-            }).execute()
-        except Exception:
-            pass
+        db.client.table("profiles").upsert({
+            "user_id": user_id,
+            "display_name": email.split("@")[0] if email else "User",
+            "selected_persona": None,
+            "created_at": now,
+            "updated_at": now,
+        }).execute()
 
 
 @router.get("", response_model=list[ExpenseOut])
@@ -47,7 +42,6 @@ async def list_expenses(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
