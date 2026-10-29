@@ -4,10 +4,7 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "devCommand": "npm run dev",
-  "env": {
-    "VITE_API_BASE_URL": "https://your-backend.railway.app",
-    "VITE_DEMO_MODE": "false",
-    "VITE_APP_ENV": "production"
-  }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
-
