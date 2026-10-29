@@ -20,23 +20,18 @@ def _now() -> str:
 def _ensure_profile_exists(user_id: str, email: str, db) -> None:
     now = _now()
     if db.mode == "sqlite":
-        row = db.fetchone("SELECT user_id FROM profiles WHERE user_id = ?", (user_id,))
-        if not row:
-            db.execute(
-                "INSERT OR IGNORE INTO profiles (user_id, display_name, selected_persona, db_created_at, db_updated_at) VALUES (?, ?, ?, ?, ?)",
-                (user_id, "User", None, now, now),
-            )
+        db.execute(
+            "INSERT OR IGNORE INTO profiles (user_id, display_name, selected_persona, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            (user_id, email.split("@")[0] if email else "User", None, now, now),
+        )
     else:
-        try:
-            db.client.table("profiles").upsert({
-                "user_id": user_id,
-                "display_name": "User",
-                "selected_persona": None,
-                "db_created_at": now,
-                "db_updated_at": now,
-            }).execute()
-        except Exception:
-            pass
+        db.client.table("profiles").upsert({
+            "user_id": user_id,
+            "display_name": email.split("@")[0] if email else "User",
+            "selected_persona": None,
+            "created_at": now,
+            "updated_at": now,
+        }).execute()
 
 
 @router.get("", response_model=list[TaskOut])
@@ -98,7 +93,7 @@ async def create_task(
 
     # Validate category is one of the allowed values per migration CHECK constraint
     allowed_categories = {'work', 'personal', 'health', 'finance', 'household'}
-    if body.category not in allowed_categories:
+    if body.category is not None and body.category not in allowed_categories:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid category. Must be one of: {', '.join(allowed_categories)}"
@@ -122,7 +117,7 @@ async def create_task(
         "id": task_id,
         "user_id": user_id,
         "title": body.title.strip(),
-        "category": body.category,
+        "category": body.category or "personal",
         "due_date": due_str,
         "completed_at": comp_str,
         "created_at": created_str,
