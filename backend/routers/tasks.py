@@ -6,7 +6,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from auth import get_current_user, require_non_demo
+from auth import get_current_user
 from database import get_db
 from models.task import TaskCreate, TaskUpdate, TaskComplete, TaskOut
 
@@ -39,7 +39,6 @@ async def list_tasks(
     category: Optional[str] = None,
     status_filter: Optional[str] = Query(None, alias="status", description="completed|open|overdue"),
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
