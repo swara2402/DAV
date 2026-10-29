@@ -188,3 +188,36 @@ def test_demo_token_is_rejected_outside_demo_mode(monkeypatch):
     monkeypatch.setattr(settings, "ENVIRONMENT", "production")
     assert settings.is_demo is False
     assert _decode_demo_token("demo_maya") is None
+
+
+def test_csv_import_adds_real_transactions_only_to_authenticated_user(client: TestClient, fresh_auth_headers: dict, demo_auth_headers: dict):
+    csv_text = (
+        "Date,Narration,Debit, Credit,Category\n"
+        "2026-10-01,Swiggy order,420.50,,convenience_food\n"
+        "2026-10-02,Monthly salary,,50000,\n"
+        "2026-10-03,DMart groceries,1250.00,,groceries\n"
+    ).replace("Debit, Credit", "Debit,Credit")
+    response = client.post(
+        "/api/v1/expenses/import-csv",
+        content=csv_text,
+        headers={**fresh_auth_headers, "Content-Type": "text/csv"},
+    )
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["imported"] == 2
+    assert result["skipped"] == 1
+    own = client.get("/api/v1/expenses", headers=fresh_auth_headers).json()
+    imported = [row for row in own if row.get("data_source") == "bank_csv_import"]
+    assert len(imported) == 2
+    assert {row["category"] for row in imported} == {"convenience_food", "groceries"}
+    other = client.get("/api/v1/expenses", headers=demo_auth_headers).json()
+    assert not any(row["id"] in {item["id"] for item in imported} for row in other)
+
+
+def test_csv_import_rejects_missing_required_columns(client: TestClient, fresh_auth_headers: dict):
+    response = client.post(
+        "/api/v1/expenses/import-csv",
+        content="Date,Merchant\n2026-10-01,Shop",
+        headers={**fresh_auth_headers, "Content-Type": "text/csv"},
+    )
+    assert response.status_code == 400
