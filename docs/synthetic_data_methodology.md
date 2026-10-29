@@ -31,7 +31,7 @@ To provide an instant, reliable, zero-onboarding experience for first-time visit
 
 ## 3. Deterministic Generation Parameters
 
-All synthetic data is generated via `/Users/sam/Desktop/DAV/data/generate_synthetic.py`.
+All synthetic data is generated via ``data/generate_synthetic.py``.
 
 - **Random Seed**: Fixed at `42` (`random.Random(42)`).
 - **Observation Window**:
@@ -63,7 +63,7 @@ To mathematically validate the Insight Engine, both datasets have a planted asso
 
 ## 5. Automated Data Validation
 
-The synthetic dataset integrity is guaranteed by `data/validate_synthetic.py`, which enforces 32 automated checks:
+The synthetic dataset is checked by `data/validate_synthetic.py`, which enforces automated checks:
 1. Exact column headers and schemas.
 2. Zero duplicate UUIDs across all records.
 3. Strict ISO 8601 date format conformance.
