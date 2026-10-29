@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from auth import get_current_user
 from database import get_db
@@ -122,6 +122,196 @@ async def create_expense(
         if not resp.data:
             raise HTTPException(status_code=500, detail="Failed to create expense")
         return resp.data[0]
+
+
+
+
+
+def _csv_date(value: str):
+    """Parse common bank-statement dates, preferring Indian day-first formats."""
+    from datetime import date
+    from dateutil import parser as date_parser
+
+    raw = (value or "").strip()
+    if not raw:
+        raise ValueError("missing date")
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d %b %Y", "%d %B %Y"):
+        try:
+            return datetime.strptime(raw, fmt).date()
+        except ValueError:
+            pass
+    # Reject ambiguous slash dates rather than silently swapping day and month.
+    if "/" in raw and len(raw.split("/")) == 3:
+        parts = raw.split("/")
+        if len(parts[0]) <= 2 and len(parts[1]) <= 2:
+            raise ValueError("ambiguous date; use YYYY-MM-DD or DD/MM/YYYY")
+    try:
+        return date_parser.parse(raw, dayfirst=True).date()
+    except (ValueError, TypeError, OverflowError) as exc:
+        raise ValueError("invalid date") from exc
+
+
+def _csv_category(value: str, description: str) -> str:
+    from models.common import VALID_EXPENSE_CATEGORIES
+
+    raw = (value or "").strip().lower().replace(" ", "_").replace("&", "and")
+    aliases = {
+        "food": "convenience_food", "takeaway": "convenience_food",
+        "takeout": "convenience_food", "food_delivery": "convenience_food",
+        "restaurants": "dining_out", "restaurant": "dining_out",
+        "grocery": "groceries", "fuel": "transport", "travel": "transport",
+        "shopping": "shopping", "utility": "utilities", "utility_bill": "utilities",
+        "bill": "bills", "medical": "healthcare", "pharmacy": "healthcare",
+        "personalcare": "personal_care", "subscription": "subscriptions",
+    }
+    if raw in VALID_EXPENSE_CATEGORIES:
+        return raw
+    if raw in aliases:
+        return aliases[raw]
+
+    text = f"{value} {description}".lower()
+    if any(word in text for word in ("swiggy", "zomato", "blinkit", "zepto", "food delivery", "takeaway", "takeout")):
+        return "convenience_food"
+    if any(word in text for word in ("grocery", "supermarket", "bigbasket", "dmart", "vegetable")):
+        return "groceries"
+    if any(word in text for word in ("uber", "ola", "metro", "bus", "train", "petrol", "fuel")):
+        return "transport"
+    if any(word in text for word in ("electricity", "water bill", "internet bill", "mobile recharge")):
+        return "utilities"
+    if any(word in text for word in ("netflix", "spotify", "subscription")):
+        return "subscriptions"
+    if any(word in text for word in ("restaurant", "cafe", "dining")):
+        return "dining_out"
+    return "other"
+
+
+@router.post("/import-csv")
+async def import_expenses_csv(
+    request: Request,
+    user: dict = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Import real, user-supplied bank/card transactions from a CSV statement.
+
+    Accepted columns include date/transaction_date, amount/debit/withdrawal,
+    description/narration/merchant, and optional category. No external account
+    connection is made and no transaction is invented.
+    """
+    import csv
+    import io
+    import math
+
+    raw = await request.body()
+    if not raw:
+        raise HTTPException(status_code=400, detail="The CSV file is empty.")
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="CSV files must be 5 MB or smaller.")
+    try:
+        content = raw.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=400, detail="Please export the statement as UTF-8 CSV.") from exc
+
+    reader = csv.DictReader(io.StringIO(content))
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="The CSV needs a header row.")
+    normalized = {str(name).strip().lower().replace(" ", "_"): name for name in reader.fieldnames if name}
+    date_col = next((normalized[k] for k in ("date", "transaction_date", "txn_date", "value_date", "posting_date") if k in normalized), None)
+    desc_col = next((normalized[k] for k in ("description", "narration", "merchant", "details", "transaction_details", "particulars") if k in normalized), None)
+    amount_col = next((normalized[k] for k in ("amount", "transaction_amount") if k in normalized), None)
+    debit_col = next((normalized[k] for k in ("debit", "withdrawal", "withdrawals", "debit_amount") if k in normalized), None)
+    credit_col = next((normalized[k] for k in ("credit", "deposit", "deposits", "credit_amount") if k in normalized), None)
+    category_col = next((normalized[k] for k in ("category", "expense_category") if k in normalized), None)
+
+    if not date_col or not desc_col or not (amount_col or debit_col):
+        raise HTTPException(
+            status_code=400,
+            detail="Required columns not found. Include date, description/narration, and amount or debit/withdrawal. Optional: category.",
+        )
+
+    rows = list(reader)
+    if len(rows) > 5000:
+        raise HTTPException(status_code=413, detail="Import up to 5,000 transactions at a time.")
+    user_id = user["user_id"]
+    email = user.get("email", "")
+    _ensure_profile_exists(user_id, email, db)
+    now = _now()
+    imported = 0
+    skipped = 0
+    errors = []
+    seen = set()
+    from models.common import VALID_EXPENSE_CATEGORIES
+
+    for line_number, row in enumerate(rows, start=2):
+        try:
+            date_value = (row.get(date_col) or "").strip()
+            description = (row.get(desc_col) or "").strip()[:500]
+            if not description:
+                description = "Bank statement transaction"
+            # A separate debit column is the safest choice for bank exports.
+            raw_amount = (row.get(debit_col) or "").strip() if debit_col else ""
+            if raw_amount:
+                amount_text = raw_amount
+            elif amount_col:
+                amount_text = (row.get(amount_col) or "").strip()
+                if credit_col and (row.get(credit_col) or "").strip():
+                    # In statements with separate debit/credit columns, ignore credits.
+                    skipped += 1
+                    continue
+            else:
+                skipped += 1
+                continue
+
+            amount_text = amount_text.replace(",", "").replace("₹", "").replace("INR", "").strip()
+            if amount_text.startswith("(") and amount_text.endswith(")"):
+                amount_text = "-" + amount_text[1:-1]
+            amount = abs(float(amount_text))
+            if not math.isfinite(amount) or amount <= 0:
+                skipped += 1
+                continue
+            transaction_date = _csv_date(date_value)
+            supplied_category = (row.get(category_col) or "").strip() if category_col else ""
+            category = _csv_category(supplied_category, description)
+            if category not in VALID_EXPENSE_CATEGORIES:
+                category = "other"
+
+            # Skip duplicate lines within this upload. Existing rows are not deduplicated
+            # by amount/date/merchant because identical real purchases can occur.
+            signature = (transaction_date.isoformat(), round(amount, 2), description.casefold(), category)
+            if signature in seen:
+                skipped += 1
+                continue
+            seen.add(signature)
+            expense_id = str(uuid.uuid4())
+            data = {
+                "id": expense_id, "user_id": user_id,
+                "date": transaction_date.isoformat(), "amount": round(amount, 2),
+                "category": category, "description": description,
+                "data_source": "bank_csv_import", "created_at": now, "updated_at": now,
+            }
+            if db.mode == "sqlite":
+                db.execute(
+                    """INSERT INTO expenses
+                    (id, user_id, date, amount, category, description, data_source, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (data["id"], user_id, data["date"], data["amount"], data["category"],
+                     data["description"], data["data_source"], now, now),
+                )
+            else:
+                db.client.table("expenses").insert(data).execute()
+            imported += 1
+        except (ValueError, TypeError, OverflowError) as exc:
+            skipped += 1
+            if len(errors) < 10:
+                errors.append({"line": line_number, "reason": str(exc)[:160]})
+
+    return {
+        "imported": imported,
+        "skipped": skipped,
+        "total_rows": len(rows),
+        "source": "user_uploaded_bank_csv",
+        "errors": errors,
+        "note": "Transactions were imported only into the authenticated user's workspace. Review inferred categories before relying on insights.",
+    }
 
 
 @router.get("/{expense_id}", response_model=ExpenseOut)
