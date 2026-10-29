@@ -25,7 +25,7 @@ def test_summary_uses_real_source_fields_and_reports_exclusions():
             "day_of_week": "Monday", "mult": 2.0, "survey_year": 2024,
         },
         {
-            "person_id": "p2", "state": "Maharashtra", "age": 30,
+            "person_id": "p2", "state": "Maharashtra", "age": 23,
             "time_from": "10:00", "time_to": "11:30", "activity_code": "A1",
             "activity_location": "home", "payment_status": "unpaid",
             "day_of_week": "Monday", "mult": 1.0, "survey_year": 2024,
