@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 from typing import Literal
+from datetime import datetime, timedelta, timezone
+import uuid
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from jose import jwt
+from config import settings
 
 from auth import get_current_user, require_demo_mode
 from database import get_db
@@ -13,6 +17,32 @@ from services.demo_seeder import seed_persona, _clear_user_data
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/demo", tags=["demo"])
+
+
+@router.post("/personal-session", dependencies=[Depends(require_demo_mode)])
+async def create_personal_session():
+    """Create an isolated anonymous workspace for local/demo use only."""
+    user_id = f"demo_session_{uuid.uuid4()}"
+    now = datetime.now(timezone.utc)
+    token = jwt.encode(
+        {
+            "sub": user_id,
+            "email": "personal@demo.lifedecoded.app",
+            "aud": "demo",
+            "iss": "lifedecoded-demo",
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(days=90)).timestamp()),
+        },
+        settings.DEMO_JWT_SECRET,
+        algorithm="HS256",
+    )
+    return {
+        "access_token": token,
+        "user_id": user_id,
+        "email": "personal@demo.lifedecoded.app",
+        "expires_in_days": 90,
+        "disclosure": "Isolated anonymous demo workspace, not a registered account. Use only a locally hosted instance for sensitive financial data.",
+    }
 
 
 class PersonaSelectRequest(BaseModel):
