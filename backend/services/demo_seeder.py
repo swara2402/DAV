@@ -95,23 +95,21 @@ def seed_persona(user_id: str, persona: str, db: Any) -> dict:
     # Ensure profile exists
     _ensure_profile(user_id, persona, db)
 
-    # Load expenses
-    if files["expenses"]:
-        expense_path = data_dir / files["expenses"]
-        expense_rows = _load_csv(expense_path)
-        count = _insert_expenses(user_id, expense_rows, db)
-        record_counts["expenses"] = count
-    else:
-        record_counts["expenses"] = 0
+    try:
+        if files["expenses"]:
+            expense_rows = _load_csv(data_dir / files["expenses"])
+            record_counts["expenses"] = _insert_expenses(user_id, expense_rows, db)
+        else:
+            record_counts["expenses"] = 0
 
-    # Load tasks
-    if files["tasks"]:
-        task_path = data_dir / files["tasks"]
-        task_rows = _load_csv(task_path)
-        count = _insert_tasks(user_id, task_rows, db)
-        record_counts["tasks"] = count
-    else:
-        record_counts["tasks"] = 0
+        if files["tasks"]:
+            task_rows = _load_csv(data_dir / files["tasks"])
+            record_counts["tasks"] = _insert_tasks(user_id, task_rows, db)
+        else:
+            record_counts["tasks"] = 0
+    except Exception:
+        _clear_user_data(user_id, db)
+        raise
 
     # Record seed run (use migration column names: persona_id and dataset_version)
     now = _now_iso()
@@ -211,7 +209,8 @@ def _insert_expenses(user_id: str, rows: list[dict], db: Any) -> int:
                 }).execute()
             inserted += 1
         except Exception as e:
-            logger.warning(f"Failed to insert expense row: {e} | row={row}")
+            logger.error("Failed to insert synthetic expense row (%s)", type(e).__name__)
+            raise RuntimeError("Failed to insert synthetic expense row") from e
     return inserted
 
 
@@ -266,7 +265,8 @@ def _insert_tasks(user_id: str, rows: list[dict], db: Any) -> int:
                 }).execute()
             inserted += 1
         except Exception as e:
-            logger.warning(f"Failed to insert task row: {e} | row={row}")
+            logger.error("Failed to insert synthetic task row (%s)", type(e).__name__)
+            raise RuntimeError("Failed to insert synthetic task row") from e
     return inserted
 
 
