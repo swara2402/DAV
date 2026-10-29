@@ -202,6 +202,7 @@ This survey is separate from personal financial data. It does not contain linked
 | [Data dictionary](docs/data_dictionary.md) | Database schema and field descriptions |
 | [Privacy and security](docs/privacy_and_security.md) | Authentication, RLS, secrets, and data reset |
 | [Testing and evaluation](docs/testing_and_evaluation.md) | Test coverage and manual verification |
+| [DAV implementation audit](docs/dav-enhancement-audit.md) | Engineering checklist, DAV concept mapping, and verification commands |
 | [Demo script](docs/demo_script.md) | Short product walkthrough |
 | [Research paper outline](docs/research_paper_outline.md) | Research framing and proposed paper structure |
 | [Public datasets](docs/public_datasets.md) | Public data sources and integration rules |
