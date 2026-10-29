@@ -13,6 +13,26 @@ def test_health_check(client: TestClient):
     assert "version" in data
 
 
+
+@pytest.mark.parametrize(
+    ("path", "payload"),
+    [
+        ("/api/v1/demo/personal-session", None),
+        ("/api/v1/demo/select-persona", {"persona": "maya"}),
+        ("/api/v1/demo/reset", {"confirm": True}),
+    ],
+)
+def test_demo_endpoints_are_disabled_in_production(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    path: str,
+    payload: dict | None,
+):
+    """Demo session creation and destructive demo tools must be fenced off in production."""
+    monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+    response = client.post(path, json=payload)
+    assert response.status_code == 403, response.text
+
 def test_unauthorized_request(client: TestClient):
     """Endpoints requiring auth must reject missing Authorization header with 401."""
     response = client.get("/api/v1/expenses")
