@@ -377,10 +377,19 @@ def calculate_overdue_convenience_insight(
     total_weeks = len(weekly_breakdown)
 
     # ------------------------------------------------------------------
-    # 4. Split into qualifying / baseline
+    # 4. Split only weeks with observed expense records into qualifying / baseline.
+    # Missing logs are unknown, not zero-spend baseline weeks.
     # ------------------------------------------------------------------
-    qualifying = [w for w in weekly_breakdown if w["is_qualifying"]]
-    baseline = [w for w in weekly_breakdown if not w["is_qualifying"]]
+    observed_weeks = [w for w in weekly_breakdown if w.get("spending_observed", False)]
+    if len(observed_weeks) < min_a:
+        return _insufficient(
+            "insufficient_expense_coverage",
+            weekly_breakdown=weekly_breakdown,
+            total_weeks=len(observed_weeks),
+        )
+
+    qualifying = [w for w in observed_weeks if w["is_qualifying"]]
+    baseline = [w for w in observed_weeks if not w["is_qualifying"]]
 
     n_qualifying = len(qualifying)
     n_baseline = len(baseline)
