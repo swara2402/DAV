@@ -142,7 +142,7 @@ npm run build
    - `CORS_ORIGINS=https://<your-vercel-app>.vercel.app`
    - For legacy Supabase projects using HS256 only: `SUPABASE_JWT_SECRET=<legacy JWT secret>`
 3. Use the start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-4. Apply migrations `001_initial_schema.sql`, `002_indexes.sql`, `003_rls_policies.sql`, and `004_security_hardening.sql` in order in Supabase before enabling production traffic.
+4. Apply migrations `001_initial_schema.sql`, `002_indexes.sql`, `003_rls_policies.sql`, `004_security_hardening.sql`, and `005_expense_category_alignment.sql` in order in Supabase before enabling production traffic.
 
 Production JWT verification uses the project's Auth JWKS endpoint for asymmetric signing keys. Never use the public anon key as a JWT signing secret. The API uses a service-role client, which bypasses RLS, so every database query must remain explicitly scoped to the authenticated user's `user_id`.
 ---
