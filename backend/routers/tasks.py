@@ -79,7 +79,6 @@ async def list_tasks(
 async def create_task(
     body: TaskCreate,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -157,7 +156,6 @@ async def create_task(
 async def get_task(
     task_id: str,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -180,7 +178,6 @@ async def update_task(
     task_id: str,
     body: TaskUpdate,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -234,7 +231,6 @@ async def mark_task_complete(
     task_id: str,
     body: TaskComplete,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -272,7 +268,6 @@ async def mark_task_complete(
 async def delete_task(
     task_id: str,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
