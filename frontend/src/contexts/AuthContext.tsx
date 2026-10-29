@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { PersonaType } from '../types'
-import { selectPersona } from '../lib/api'
+import { createPersonalSession, selectPersona } from '../lib/api'
 
 interface AuthUser {
   user_id: string
@@ -30,9 +30,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const token = localStorage.getItem('ld_auth_token')
     const savedPersona = localStorage.getItem('ld_active_persona') as PersonaType | null
+    const privateUserId = localStorage.getItem('ld_private_user_id')
+    const isPrivateSession = savedPersona === 'fresh'
+      && !!token
+      && !!privateUserId
+      && /^demo_session_[0-9a-f-]{36}$/.test(privateUserId)
 
-    // Only restore known demo identities. Never trust arbitrary localStorage values.
-    if (token && token === `demo_${savedPersona}` && savedPersona && VALID_PERSONAS.includes(savedPersona)) {
+    if (isPrivateSession) {
+      setUser({
+        user_id: privateUserId!,
+        email: 'personal@demo.lifedecoded.app',
+        persona: 'fresh',
+        is_demo: true,
+      })
+      setActivePersonaState('fresh')
+    } else if (token && token === `demo_${savedPersona}` && savedPersona && VALID_PERSONAS.includes(savedPersona) && savedPersona !== 'fresh') {
       setUser({
         user_id: token,
         email: `${savedPersona}@demo.lifedecoded.app`,
@@ -43,44 +55,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       localStorage.removeItem('ld_auth_token')
       localStorage.removeItem('ld_active_persona')
+      localStorage.removeItem('ld_private_user_id')
     }
     setIsLoading(false)
   }, [])
 
   const loginDemo = async (persona: PersonaType) => {
     if (!VALID_PERSONAS.includes(persona)) {
-      throw new Error('Unknown demo workspace. Please choose one of the available personas.')
+      throw new Error('Unknown workspace. Please choose one of the available options.')
     }
 
     const previousToken = localStorage.getItem('ld_auth_token')
     const previousPersona = localStorage.getItem('ld_active_persona')
+    const previousPrivateUserId = localStorage.getItem('ld_private_user_id')
     const previousUser = user
     const previousActivePersona = activePersona
 
     setIsLoading(true)
-    const token = `demo_${persona}`
-    // The demo endpoint expects this bearer token. Roll it back if the backend fails.
-    localStorage.setItem('ld_auth_token', token)
-    localStorage.setItem('ld_active_persona', persona)
-
     try {
-      await selectPersona(persona)
-      const nextUser: AuthUser = {
-        user_id: token,
-        email: `${persona}@demo.lifedecoded.app`,
-        persona,
-        is_demo: true,
+      let token: string
+      let userId: string
+      let email: string
+      if (persona === 'fresh') {
+        const session = await createPersonalSession()
+        token = session.access_token
+        userId = session.user_id
+        email = session.email
+        localStorage.setItem('ld_private_user_id', userId)
+      } else {
+        token = `demo_${persona}`
+        userId = token
+        email = `${persona}@demo.lifedecoded.app`
+        localStorage.removeItem('ld_private_user_id')
+        localStorage.setItem('ld_auth_token', token)
+        await selectPersona(persona)
       }
-      setUser(nextUser)
+
+      localStorage.setItem('ld_auth_token', token)
+      localStorage.setItem('ld_active_persona', persona)
+      setUser({ user_id: userId, email, persona, is_demo: true })
       setActivePersonaState(persona)
     } catch (err) {
       if (previousToken === null) localStorage.removeItem('ld_auth_token')
       else localStorage.setItem('ld_auth_token', previousToken)
       if (previousPersona === null) localStorage.removeItem('ld_active_persona')
       else localStorage.setItem('ld_active_persona', previousPersona)
+      if (previousPrivateUserId === null) localStorage.removeItem('ld_private_user_id')
+      else localStorage.setItem('ld_private_user_id', previousPrivateUserId)
       setUser(previousUser)
       setActivePersonaState(previousActivePersona)
-      throw new Error('Could not start the demo workspace. Make sure the backend is running, then try again.')
+      throw new Error('Could not start the workspace. Make sure the backend is running, then try again.')
     } finally {
       setIsLoading(false)
     }
@@ -89,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     localStorage.removeItem('ld_auth_token')
     localStorage.removeItem('ld_active_persona')
+    localStorage.removeItem('ld_private_user_id')
     setUser(null)
     setActivePersonaState(null)
   }
