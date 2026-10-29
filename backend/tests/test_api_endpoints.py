@@ -114,7 +114,7 @@ def test_task_crud_and_completion(client: TestClient, fresh_auth_headers: dict):
         "/api/v1/tasks",
         json={
             "title": "Submit GST return",
-            "due_date": "2026-10-25",
+            "due_date": "2026-11-25",
             "category": "finance",
         },
         headers=fresh_auth_headers,
@@ -127,11 +127,11 @@ def test_task_crud_and_completion(client: TestClient, fresh_auth_headers: dict):
     # 2. Complete task
     comp_resp = client.post(
         f"/api/v1/tasks/{task_id}/complete",
-        json={"completed_at": "2026-10-24"},
+        json={"completed_at": "2026-11-24"},
         headers=fresh_auth_headers,
     )
     assert comp_resp.status_code == 200
-    assert comp_resp.json()["completed_at"] == "2026-10-24"
+    assert comp_resp.json()["completed_at"] == "2026-11-24"
 
     # 3. Clean up
     client.delete(f"/api/v1/tasks/{task_id}", headers=fresh_auth_headers)
