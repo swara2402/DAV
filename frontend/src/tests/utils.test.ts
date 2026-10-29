@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatINR, formatINRPrecise, formatDate, formatCategoryName, cn } from '../lib/utils'
+import { formatINR, formatINRPrecise, formatDate, formatCategoryName, cn, toLocalISODate, getLocalDateRange } from '../lib/utils'
 
 describe('Frontend Utility Functions', () => {
   it('formats INR whole currency values accurately', () => {
@@ -34,3 +34,27 @@ describe('Frontend Utility Functions', () => {
   })
 })
 
+
+
+describe('Local calendar date helpers', () => {
+  it('formats date using local calendar fields rather than UTC', () => {
+    const localDate = new Date(2026, 9, 29, 1, 15, 0)
+    expect(toLocalISODate(localDate)).toBe('2026-10-29')
+  })
+
+  it('returns stable inclusive local date bounds', () => {
+    const now = new Date(2026, 9, 29, 1, 15, 0)
+    expect(getLocalDateRange(14, now)).toEqual({
+      start: '2026-10-15',
+      end: '2026-10-29',
+    })
+  })
+
+  it('does not move the start date forward for negative ranges', () => {
+    const now = new Date(2026, 9, 29, 1, 15, 0)
+    expect(getLocalDateRange(-5, now)).toEqual({
+      start: '2026-10-29',
+      end: '2026-10-29',
+    })
+  })
+})
