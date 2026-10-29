@@ -8,7 +8,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from auth import get_current_user, require_non_demo
+from auth import get_current_user
 from database import get_db
 
 router = APIRouter(prefix="/api/v1/actions", tags=["actions"])
@@ -55,24 +55,19 @@ class FollowupOutcome(BaseModel):
 async def create_action(
     body: ActionCreate,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
     action_id = str(uuid.uuid4())
     now = _now()
 
-    # Validate insight_id is provided (required per migration)
-    if not body.insight_id:
-        raise HTTPException(
-            status_code=400,
-            detail="insight_id is required to create an action"
-        )
+    # A manual action can exist without a cached insight; keep the DB contract non-null.
+    insight_id = body.insight_id or "manual"
 
     data = {
         "id": action_id,
         "user_id": user_id,
-        "insight_id": body.insight_id,
+        "insight_id": insight_id,
         "action_text": body.action_text.strip(),
         "tried_at": now,
         "followup_window_days": 28,
@@ -91,7 +86,7 @@ async def create_action(
             (
                 action_id,
                 user_id,
-                body.insight_id,
+                insight_id,
                 body.action_text.strip(),
                 now,
                 28,
@@ -201,7 +196,7 @@ async def get_action_followup(
             WHERE user_id = ?
               AND category = 'convenience_food'
               AND date >= ?
-              AND date <= ?
+              AND date < ?
             """,
             (user_id, created_date.isoformat(), followup_end.isoformat()),
         )
@@ -212,7 +207,7 @@ async def get_action_followup(
             .eq("user_id", user_id)
             .eq("category", "convenience_food")
             .gte("date", created_date.isoformat())
-            .lte("date", followup_end.isoformat())
+            .lt("date", followup_end.isoformat())
             .execute()
         )
         post_rows = resp.data or []
