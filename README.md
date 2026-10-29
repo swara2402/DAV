@@ -79,12 +79,14 @@ See [`docs/architecture.md`](docs/architecture.md) for the full breakdown includ
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `ENVIRONMENT` | `development` or `production` | ✅ Required |
-| `DEMO_JWT_SECRET` | Demo-token signing secret, at least 32 characters in production | Development/demo or production config |
+| `DEMO_JWT_SECRET` | Unique secret of at least 32 characters; required by production configuration | Required |
+| `VITE_DEMO_MODE` | Must be `false` for production backend configuration | Production only |
 | `SUPABASE_URL` | Supabase project URL | Production only |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (backend only, never frontend) | Production only |
-| `SUPABASE_ANON_KEY` | Public Supabase anon key, not a signing secret | If required by deployment |
+| `SUPABASE_ANON_KEY` | Public Supabase anon key, not a signing secret | Optional |
+| `SUPABASE_JWT_SECRET` | Legacy HS256 signing secret only; do not set to the anon key | Only for legacy HS256 projects |
 | `SQLITE_PATH` | SQLite database path for development/demo | Optional |
-| `CORS_ORIGINS` | Comma-separated list of allowed origins | Optional (defaults to localhost) |
+| `CORS_ORIGINS` | Comma-separated allowed origins; production requires explicit HTTPS origins | Required in production; optional in development |
 | `OVERDUE_THRESHOLD` | Minimum overdue tasks to classify a qualifying week (default: `3`) | Optional |
 
 ### Frontend (`frontend/.env`)
