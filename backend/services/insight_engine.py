@@ -212,14 +212,30 @@ def _compute_week(
     )
     cf_spending = float(expenses_df.loc[mask, "amount"].sum())
 
+    # Exclude tasks that had not been created by the historical snapshot.
+    # Older unit fixtures without created_at represent tasks already in existence.
+    snapshot_tasks = tasks_df
+    if not tasks_df.empty and "created_at" in tasks_df.columns:
+        def _created_by_snapshot(value: Any) -> bool:
+            if value is None or pd.isna(value):
+                return False
+            try:
+                created = pd.Timestamp(value)
+                if created.tzinfo is not None:
+                    created = created.tz_convert("Asia/Kolkata")
+                return created.date() <= snapshot_date
+            except (TypeError, ValueError):
+                return False
+        snapshot_tasks = tasks_df[tasks_df["created_at"].apply(_created_by_snapshot)]
+
     # Overdue tasks at Sunday snapshot
-    overdue_mask = tasks_df.apply(
+    overdue_mask = snapshot_tasks.apply(
         lambda row: _is_overdue_at_snapshot(
             row["due_date"], row["completed_at"], snapshot_date
         ),
         axis=1,
     )
-    overdue_tasks = tasks_df[overdue_mask] if not tasks_df.empty else pd.DataFrame(columns=["title"])
+    overdue_tasks = snapshot_tasks[overdue_mask] if not snapshot_tasks.empty else pd.DataFrame(columns=["title"])
     overdue_count = int(len(overdue_tasks))
     if "title" in overdue_tasks.columns:
         overdue_titles = overdue_tasks["title"].dropna().tolist()[:20]  # cap at 20
@@ -293,7 +309,7 @@ def calculate_overdue_convenience_insight(
             "outliers_removed_baseline": 0,
             "statistical_methodology": {
                 "outlier_detection": "IQR method (1.5*IQR bounds)",
-                "confidence_interval": "95% CI using t-distribution approximation",
+                "confidence_interval": "95% Student t interval for each group mean; not an interval for the ratio",
                 "limitations": [
                     "Small sample size (n < 30), confidence intervals are approximate",
                     "Correlation does not imply causation",
@@ -414,17 +430,18 @@ def calculate_overdue_convenience_insight(
     qualifying_std = float(np.std(qualifying_filtered, ddof=1)) if len(qualifying_filtered) > 1 else 0.0
     baseline_std = float(np.std(baseline_filtered, ddof=1)) if len(baseline_filtered) > 1 else 0.0
 
-    # Standard error of the mean (for uncertainty estimates)
+    from scipy.stats import t as student_t\n\n    # Standard error of the mean (for uncertainty estimates)
     qualifying_sem = qualifying_std / np.sqrt(len(qualifying_filtered)) if len(qualifying_filtered) > 1 else 0.0
     baseline_sem = baseline_std / np.sqrt(len(baseline_filtered)) if len(baseline_filtered) > 1 else 0.0
 
-    # 95% confidence intervals (approximate using t-distribution for small samples)
-    # For small n, t-critical ≈ 2.0 for 95% CI, which is a safe approximation
-    ci_multiplier = 2.0
-    qualifying_ci_low = qualifying_avg_full - ci_multiplier * qualifying_sem
-    qualifying_ci_high = qualifying_avg_full + ci_multiplier * qualifying_sem
-    baseline_ci_low = baseline_avg_full - ci_multiplier * baseline_sem
-    baseline_ci_high = baseline_avg_full + ci_multiplier * baseline_sem
+    # Exact two-sided Student t critical value for each sample's mean CI.
+    # These are separate mean intervals, not a confidence interval for the ratio.
+    qualifying_critical = float(student_t.ppf(0.975, len(qualifying_filtered) - 1)) if len(qualifying_filtered) > 1 else float("nan")
+    baseline_critical = float(student_t.ppf(0.975, len(baseline_filtered) - 1)) if len(baseline_filtered) > 1 else float("nan")
+    qualifying_ci_low = qualifying_avg_full - qualifying_critical * qualifying_sem if np.isfinite(qualifying_critical) else qualifying_avg_full
+    qualifying_ci_high = qualifying_avg_full + qualifying_critical * qualifying_sem if np.isfinite(qualifying_critical) else qualifying_avg_full
+    baseline_ci_low = baseline_avg_full - baseline_critical * baseline_sem if np.isfinite(baseline_critical) else baseline_avg_full
+    baseline_ci_high = baseline_avg_full + baseline_critical * baseline_sem if np.isfinite(baseline_critical) else baseline_avg_full
 
     # Division by zero guard
     if baseline_avg_full == 0.0:
@@ -491,7 +508,7 @@ def calculate_overdue_convenience_insight(
         "outliers_removed_baseline": len(baseline_spendings) - len(baseline_filtered),
         "statistical_methodology": {
             "outlier_detection": "IQR method (1.5*IQR bounds)",
-            "confidence_interval": "95% CI using t-distribution approximation",
+            "confidence_interval": "95% Student t interval for each group mean; not an interval for the ratio",
             "limitations": [
                 "Small sample size (n < 30), confidence intervals are approximate",
                 "Correlation does not imply causation",
