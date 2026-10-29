@@ -159,7 +159,6 @@ async def list_actions(
 async def get_action_followup(
     action_id: str,
     user: dict = Depends(get_current_user),
-    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -262,7 +261,7 @@ async def get_action_followup(
     if db.mode == "sqlite":
         baseline_rows = db.fetchall(
             """
-            SELECT amount FROM expenses
+            SELECT amount, date FROM expenses
             WHERE user_id = ?
               AND category = 'convenience_food'
               AND date >= ?
@@ -273,7 +272,7 @@ async def get_action_followup(
     else:
         resp = (
             db.client.table("expenses")
-            .select("amount")
+            .select("amount,date")
             .eq("user_id", user_id)
             .eq("category", "convenience_food")
             .gte("date", baseline_start.isoformat())
@@ -283,8 +282,24 @@ async def get_action_followup(
         baseline_rows = resp.data or []
 
     baseline_weeks = _observed_weeks(baseline_rows, baseline_start, created_date)
+    if len(baseline_weeks) < 3:
+        if db.mode == "sqlite":
+            db.execute(
+                "UPDATE insight_actions SET followup_status = 'insufficient_data', updated_at = ? WHERE id = ? AND user_id = ?",
+                (_now(), action_id, user_id),
+            )
+        else:
+            db.client.table("insight_actions").update({
+                "followup_status": "insufficient_data", "updated_at": _now()
+            }).eq("id", action_id).eq("user_id", user_id).execute()
+        return FollowupOutcome(
+            action_id=action_id, action_text=action["action_text"], tried_at=action["tried_at"],
+            evaluation_date=today.isoformat(), followup_window_days=followup_window_days,
+            days_elapsed=days_elapsed, status="insufficient_data",
+            message=f"Baseline records cover only {len(baseline_weeks)} distinct weeks. At least 3 observed weeks are required for a comparison.",
+        )
     baseline_total = sum(float(r["amount"]) for r in baseline_rows) if baseline_rows else 0
-    baseline_weekly_avg = round(baseline_total / 4.0, 2) if len(baseline_weeks) >= 3 else None
+    baseline_weekly_avg = round(baseline_total / 4.0, 2)
     percent_change = None
     if baseline_weekly_avg is not None and baseline_weekly_avg > 0:
         percent_change = round(((followup_weekly_avg - baseline_weekly_avg) / baseline_weekly_avg) * 100, 2)
