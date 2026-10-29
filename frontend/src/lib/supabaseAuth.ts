@@ -65,14 +65,17 @@ export async function signUpWithEmail(email: string, password: string): Promise<
   session: SupabaseSession | null
 }> {
   const redirectTo = `${window.location.origin}/auth`
-  const result = await authRequest<SupabaseSession & { user?: SupabaseUser }>(
+  const result = await authRequest<SupabaseSession & SupabaseUser & { user?: SupabaseUser }>(
     `signup?redirect_to=${encodeURIComponent(redirectTo)}`,
     { method: 'POST', body: JSON.stringify({ email, password, data: { display_name: email.split('@')[0] } }) },
   )
-  const session = result.access_token && result.refresh_token && result.user
-    ? withExpiry(result as SupabaseSession)
+  // GoTrue may return a session plus nested user, or a user-shaped response when
+  // email confirmation is required. Normalize both API response forms.
+  const user = result.user ?? (result.id ? result as SupabaseUser : null)
+  const session = result.access_token && result.refresh_token && user
+    ? withExpiry({ ...result, user } as SupabaseSession)
     : null
-  return { user: result.user ?? null, session }
+  return { user, session }
 }
 
 export async function signInWithEmail(email: string, password: string): Promise<SupabaseSession> {
