@@ -1,202 +1,234 @@
-# Life, Decoded
+# Life, Decoded ✨
+### Understand the patterns behind your everyday choices.
 
-> Discover patterns in your spending and task habits — with full transparency on how every insight is calculated.
+Life, Decoded is a personal insight dashboard that helps people explore how their workload and spending habits relate. Rather than showing totals alone, it explains how each insight is calculated and provides evidence users can inspect.
 
----
+> **See the pattern. Check the evidence. Make your own interpretation.**
 
-## Overview
+**Important:** The app reports associations in the available data. It does not prove causation or present individual results as population-wide findings.
 
-**Life, Decoded** helps young professionals (aged 21–26) uncover hidden correlations between their workload and spending behavior. The central insight the system surfaces:
+## 🌱 What You Can Explore
 
-> *In this user's logged data, weeks with at least 3 overdue tasks can be compared with other observed weeks for convenience-food spending. The result is an association, not a causal or population-level claim.*
+- **Spending and task patterns:** Compare spending across weeks with different levels of overdue tasks.
+- **Evidence-backed insights:** Review dates, weekly totals, thresholds, and calculations behind a result.
+- **Personal workspace:** Use manually entered records or supported CSV imports without connecting a bank account.
+- **Demo personas:** Explore synthetic sample data for Maya and Arjun.
+- **CSV transaction import:** Import supported bank or card statement files, with category inference and duplicate-import safeguards.
+- **Transparent limitations:** When data is insufficient, the app explains what is missing instead of inventing a conclusion.
 
-Rather than just showing budgets, Life, Decoded explains *why* spending patterns emerge — and backs every insight with an evidence panel showing the exact dates, weekly totals, and formula used.
+## 🧭 How It Works
 
----
+1. Add or explore records using demo personas or your own supported data.
+2. Group observations into weeks and identify qualifying weeks using the configured overdue-task threshold.
+3. Compare spending totals across qualifying and baseline weeks when enough observations exist.
+4. Inspect the evidence panel for dates, totals, thresholds, and formulas.
+5. Interpret the result as an observed association, not proof of cause and effect.
 
-## Quick Start
+The insight method requires at least **3 qualifying weeks and 3 baseline weeks** within the most recent **12 complete calendar weeks**. If either group is too small, the dashboard reports insufficient data.
 
-### Prerequisites
+## 🧰 Tech Stack
 
-| Tool | Version |
-|------|---------|
-| Node.js | 18+ |
-| Python | 3.11+ |
-| npm | 9+ |
+| Layer | Technologies |
+|---|---|
+| Frontend | React, TypeScript, Vite |
+| API and UI data | Axios, React Query |
+| Backend | Python 3.11+, FastAPI |
+| Insight calculations | Pandas, NumPy |
+| Local development | SQLite |
+| Production database and authentication | Supabase PostgreSQL, Supabase Auth |
+| Testing | pytest, frontend production build |
+| Deployment | Vercel (frontend), Railway (backend) |
 
-### Local Development (No Supabase Required)
+## 🏗️ Architecture
 
-**You do not need a Supabase account, project URL, anon key, or service-role key to run the app locally.** Development mode uses a local SQLite file (`backend/demo.db`) and the bundled synthetic personas.
+~~~text
+             Browser
+      React + TypeScript + Vite
+                 |
+            API requests
+                 |
+          FastAPI backend
+                 |
+       Insight engine and CRUD
+          Pandas / NumPy
+                 |
+        +--------+---------+
+        |                  |
+        v                  v
+   SQLite (local)   Supabase PostgreSQL
+                    (production setup)
+~~~
 
-```bash
-# 1. Clone and enter the repo
-git clone https://github.com/swara2402/DAV.git
-cd DAV
+Local development defaults to SQLite and synthetic demo data. Production configuration uses Supabase for authentication and PostgreSQL. See the [architecture guide](docs/architecture.md) for details.
 
-# 2. Start the backend in terminal 1
+## 🚀 Quick Start
+
+### Requirements
+
+- Node.js 18+
+- npm 9+
+- Python 3.11+
+
+### 1. Clone the repository
+
+~~~bash
+git clone https://github.com/swara2402/LifeDecoded.git
+cd LifeDecoded
+~~~
+
+### 2. Start the backend
+
+From the repository root:
+
+~~~bash
 cd backend
 python -m venv .venv
-# macOS/Linux:
-source .venv/bin/activate
-# Windows PowerShell: .venv\\Scripts\\Activate.ps1
-pip install -r requirements.txt
-# Optional: copy the template. The default development settings already use SQLite.
-cp .env.example .env
-# Make sure ENVIRONMENT=development and VITE_DEMO_MODE=true
-uvicorn main:app --reload --port 8000
+~~~
 
-# 3. Start the frontend in terminal 2, from the repo root
+Activate the environment:
+
+~~~bash
+# macOS / Linux
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+~~~
+
+Install dependencies and start the API:
+
+~~~bash
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn main:app --reload --port 8000
+~~~
+
+For the demo setup, check that the environment uses ENVIRONMENT=development and VITE_DEMO_MODE=true. The default local configuration uses SQLite.
+
+### 3. Start the frontend
+
+Open a second terminal at the repository root:
+
+~~~bash
 cd frontend
 npm install
 npm run dev
+~~~
 
-# 4. Open http://localhost:5173
-```
+Open **http://localhost:5173**. Vite proxies API requests to the backend on port 8000, so VITE_API_BASE_URL can remain unset locally.
 
-The Vite development server proxies `/api` and `/health` to `http://127.0.0.1:8000`, so you can leave `VITE_API_BASE_URL` unset locally. The first backend startup creates the SQLite schema. Demo personas (Maya and Arjun) use synthetic data, not real bank connections or your personal financial records.
+### Demo mode vs. real authentication
 
-**Important:** the default local setup is demo mode, not real account authentication. To try real Supabase Auth locally, copy `frontend/.env.example` to `frontend/.env`, keep `VITE_DEMO_MODE=false`, and ensure the Supabase Auth URL configuration allows your local `http://localhost:5173/auth` callback. Real-auth mode uses Supabase email/password registration, sign-in, session refresh, sign-out, and password recovery. Never put a service-role key in frontend environment variables.
+The default local setup uses synthetic demo personas and is **not real account authentication**. To test Supabase email/password authentication, configure frontend/.env from frontend/.env.example, set VITE_DEMO_MODE=false, and configure the Supabase Auth redirect URL for the local callback.
 
----
+Never expose a Supabase service-role key in frontend variables or commit real credentials.
 
-## Architecture
+## 🔐 Environment Configuration
 
-```
-Browser (React / TypeScript / Vite)
-  │
-  │  HTTPS — Axios + React Query
-  ▼
-FastAPI Backend (Python 3.11)
-  │
-  │  Database access wrapper (sqlite3 / supabase-py)
-  ▼
-SQLite (development) / Supabase PostgreSQL (production)
-  ▲
-  │
-Insight Engine (Pandas / NumPy)
-```
+### Backend: backend/.env
 
-See [`docs/architecture.md`](docs/architecture.md) for the full breakdown including directory structure, component architecture, and technology rationale.
+| Variable | Purpose |
+|---|---|
+| ENVIRONMENT | Development or production configuration |
+| DEMO_JWT_SECRET | Secret required by production configuration |
+| VITE_DEMO_MODE | Must be false for production backend configuration |
+| SUPABASE_URL | Supabase project URL |
+| SUPABASE_SERVICE_ROLE_KEY | Server-only service-role key |
+| SUPABASE_ANON_KEY | Optional public anon key |
+| SUPABASE_JWT_SECRET | Legacy HS256 projects only; never use the anon key as a signing secret |
+| SQLITE_PATH | Optional local SQLite database path |
+| CORS_ORIGINS | Allowed browser origins; use explicit HTTPS origins in production |
+| OVERDUE_THRESHOLD | Overdue-task threshold for qualifying weeks (default: 3) |
 
----
+### Frontend: frontend/.env
 
-## Environment Variables
+| Variable | Purpose |
+|---|---|
+| VITE_DEMO_MODE | Select demo workspace or real authentication |
+| VITE_SUPABASE_URL | Supabase project URL for real authentication |
+| VITE_SUPABASE_PUBLISHABLE_KEY | Browser-safe publishable key |
+| VITE_API_BASE_URL | Optional API base URL; local Vite proxy is used when unset |
 
-### Backend (`backend/.env`)
+Environment files are ignored by Git. Verify deployment configuration before enabling public access.
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `ENVIRONMENT` | `development` or `production` | ✅ Required |
-| `DEMO_JWT_SECRET` | Unique secret of at least 32 characters; required by production configuration | Required |
-| `VITE_DEMO_MODE` | Must be `false` for production backend configuration | Production only |
-| `SUPABASE_URL` | Supabase project URL | Production only |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (backend only, never frontend) | Production only |
-| `SUPABASE_ANON_KEY` | Public Supabase anon key, not a signing secret | Optional |
-| `SUPABASE_JWT_SECRET` | Legacy HS256 signing secret only; do not set to the anon key | Only for legacy HS256 projects |
-| `SQLITE_PATH` | SQLite database path for development/demo | Optional |
-| `CORS_ORIGINS` | Comma-separated allowed origins; production requires explicit HTTPS origins | Required in production; optional in development |
-| `OVERDUE_THRESHOLD` | Minimum overdue tasks to classify a qualifying week (default: `3`) | Optional |
+## 🧪 Tests and Checks
 
-### Frontend (`frontend/.env`)
+Backend tests:
 
-Copy `frontend/.env.example` to `frontend/.env` for a real-auth local setup.
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_DEMO_MODE` | `true` for demo workspaces, `false` for real account authentication | Required for mode selection |
-| `VITE_SUPABASE_URL` | Supabase project URL | Required for real auth |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser-safe Supabase publishable key (legacy `VITE_SUPABASE_ANON_KEY` is also accepted) | Required for real auth |
-| `VITE_API_BASE_URL` | Backend base URL, e.g. `http://localhost:8000`; leave unset to use the Vite proxy locally | Optional |
-
-> ⚠️ **Never commit `.env` files.** Both are listed in `.gitignore`.
-
----
-
-## Running Tests
-
-### Backend (pytest)
-
-```bash
+~~~bash
 cd backend
-python3 -m pytest tests/ -v --tb=short
-```
+python -m pytest tests/ -v --tb=short
+~~~
 
-The test suite is intended to cover the insight engine, API CRUD endpoints, authentication, and cross-user isolation. GitHub Actions runs the automated checks; a green run is required before treating a commit as verified. See [`docs/testing_and_evaluation.md`](docs/testing_and_evaluation.md) for full coverage details.
+Frontend TypeScript and production build check:
 
-### Frontend (TypeScript type check via build)
-
-```bash
+~~~bash
 cd frontend
 npm run build
-```
+~~~
+
+A successful local command is not a substitute for reviewing CI results and testing the actual deployment configuration. See the [testing guide](docs/testing_and_evaluation.md).
+
+## 📥 Import Your Own Transactions
+
+The **Personal** workspace supports importing supported bank or card statement CSV files. Read [Real transaction import and privacy boundaries](docs/real_transaction_import.md) for accepted headers, category inference, and limitations.
+
+- Imports in local/demo mode are scoped to an isolated anonymous workspace.
+- Tasks must belong to the same workspace to produce a meaningful personal comparison.
+- Avoid uploading sensitive statements to a public demo deployment.
+- Review privacy, retention, and access controls before using real financial records in a deployed environment.
+
+## 🌍 Public Research Data
+
+The repository includes a reproducible importer for the public **India Time Use Survey 2024** release. See [Real public-data ingestion](docs/real_public_data.md). Run the importer from the backend directory:
+
+~~~bash
+python scripts/import_public_timeuse.py
+~~~
+
+This survey is separate from personal financial data. It does not contain linked bank transactions and overdue-task histories, so it must not be used to manufacture personal records or claim that the app's workload-spending hypothesis has been validated. Maya and Arjun remain synthetic demo personas.
+
+## 📚 Documentation
+
+| Guide | What it covers |
+|---|---|
+| [Architecture](docs/architecture.md) | System design, structure, and technology choices |
+| [Insight methodology](docs/insight_methodology.md) | Definitions, formulas, and evidence thresholds |
+| [Synthetic data methodology](docs/synthetic_data_methodology.md) | Generation and validation of demo personas |
+| [Data dictionary](docs/data_dictionary.md) | Database schema and field descriptions |
+| [Privacy and security](docs/privacy_and_security.md) | Authentication, RLS, secrets, and data reset |
+| [Testing and evaluation](docs/testing_and_evaluation.md) | Test coverage and manual verification |
+| [Demo script](docs/demo_script.md) | Short product walkthrough |
+| [Research paper outline](docs/research_paper_outline.md) | Research framing and proposed paper structure |
+| [Public datasets](docs/public_datasets.md) | Public data sources and integration rules |
+| [Transaction import](docs/real_transaction_import.md) | CSV format, categorization, and privacy boundaries |
+| [Public-data ingestion](docs/real_public_data.md) | Reproducible public survey importer |
+
+## ⚠️ Known Limitations
+
+- Demo mode uses SQLite; production requires correctly configured Supabase PostgreSQL and Row Level Security.
+- The app does not currently provide direct bank integrations. Transactions are entered manually or imported from supported CSV files.
+- Email delivery and password recovery depend on Supabase Auth configuration.
+- Useful insights require enough observations in both comparison groups.
+- An observed association does not prove causation.
+- Production use of personal financial data requires careful review of authentication, access controls, privacy, and retention.
+
+## 🤝 Contributing
+
+Suggestions, bug reports, and improvements are welcome.
+
+1. Fork the repository.
+2. Create a focused feature branch.
+3. Make your changes and run relevant checks.
+4. Open a pull request describing what changed and how it was tested.
+
+Please do not commit secrets, personal financial records, or other sensitive data.
+
+## 📄 License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
 
 ---
 
-## Deployment
-
-### Frontend → Vercel
-
-1. Push your repository to GitHub.
-2. Go to [vercel.com](https://vercel.com) → **New Project** → import your repo.
-3. Set **Root Directory** to `frontend`.
-4. Add environment variable: `VITE_API_BASE_URL=<your Railway backend URL>`.
-5. Deploy. Vercel auto-detects Vite.
-
-### Backend → Railway
-
-1. Create a Railway project and deploy the repository with root directory `backend`.
-2. Set these backend environment variables:
-   - `ENVIRONMENT=production`
-   - `VITE_DEMO_MODE=false`
-   - `DEMO_JWT_SECRET=<unique random secret of at least 32 characters>`
-   - `SUPABASE_URL=<your Supabase project URL>`
-   - `SUPABASE_SERVICE_ROLE_KEY=<server-only service role key>`
-   - `CORS_ORIGINS=https://<your-vercel-app>.vercel.app`
-   - For legacy Supabase projects using HS256 only: `SUPABASE_JWT_SECRET=<legacy JWT secret>`
-3. Use the start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-4. Apply migrations `001_initial_schema.sql`, `002_indexes.sql`, `003_rls_policies.sql`, `004_security_hardening.sql`, `005_expense_category_alignment.sql`, `006_bank_csv_import_source.sql`, and `007_csv_import_idempotency.sql` in order in Supabase before enabling production traffic. Migration 006 permits `bank_csv_import` as an expense provenance value. Migration 007 adds a user-scoped fingerprint and unique index so re-uploading the same statement does not double-count transactions.
-
-Production JWT verification uses the project's Auth JWKS endpoint for asymmetric signing keys. Never use the public anon key as a JWT signing secret. The API uses a service-role client, which bypasses RLS, so every database query must remain explicitly scoped to the authenticated user's `user_id`.
----
-
-## Import Your Own Real Transactions
-
-The dashboard's **Personal** workspace now supports CSV imports from a user's own bank/card statement. See [Real transaction import and privacy boundaries](docs/real_transaction_import.md) for accepted headers, category inference, limitations, and privacy guidance. Imported transactions are scoped to an isolated anonymous workspace in local/demo mode; tasks must be entered for that same workspace to compute a meaningful personal association.
-
-Do not upload sensitive statements to a public demo deployment. For a deployed product handling personal finance records, configure real Supabase Auth and review storage, retention, and privacy controls first.
-
-## Real Public Research Data
-
-A reproducible importer is available for the genuine **India Time Use Survey 2024** public release. See [Real public-data ingestion](docs/real_public_data.md) and run `python scripts/import_public_timeuse.py` from `backend/` to download, validate, summarize, and record provenance for the source data.
-
-This is a separate research dataset, not personal finance data. It contains activity diary records, not linked bank transactions and overdue-task histories, so it must not be used to fabricate expense/task rows or claim the app's task-overload/spending hypothesis is validated. Maya and Arjun remain explicitly synthetic benchmark personas. The dashboard's personalized insight engine still requires genuine linked records entered by a user or obtained through a legitimate, consented integration. The public context is a survey-weighted mean duration per recorded activity slot, not average daily work hours or a personalized measurement. After updating the importer, regenerate the local summary with `python scripts/import_public_timeuse.py` from `backend/`.
-
-## Known Limitations
-
-- **Demo mode uses SQLite.** Production deployments require a Supabase PostgreSQL instance with Row Level Security enabled.
-- **No real bank integrations.** All expense data is entered manually or seeded from synthetic personas.
-- **Email delivery depends on Supabase Auth configuration.** Configure allowed redirect URLs and production email delivery before enabling public registration or password recovery.
-- **Insights require sufficient data.** The engine requires ≥ 3 qualifying weeks **and** ≥ 3 baseline weeks within the most recent 12 complete calendar weeks. If either group is missing, the dashboard shows an `insufficient_data` status with a specific explanation.
-- **Association, not causation.** The insight ratio describes a correlation in user-entered data — it does not prove that task overload *causes* higher spending.
-
----
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [`docs/architecture.md`](docs/architecture.md) | System design, directory structure, technology choices |
-| [`docs/insight_methodology.md`](docs/insight_methodology.md) | Precise definitions, formulas, and evidence thresholds |
-| [`docs/synthetic_data_methodology.md`](docs/synthetic_data_methodology.md) | How synthetic personas were generated and validated |
-| [`docs/data_dictionary.md`](docs/data_dictionary.md) | Full database schema and field descriptions |
-| [`docs/privacy_and_security.md`](docs/privacy_and_security.md) | Auth, RLS, secret management, data reset |
-| [`docs/testing_and_evaluation.md`](docs/testing_and_evaluation.md) | Test coverage, manual verification steps |
-| [`docs/demo_script.md`](docs/demo_script.md) | 60-second walkthrough for demos |
-| [`docs/research_paper_outline.md`](docs/research_paper_outline.md) | Academic paper outline targeting CHI / UbiComp |
-| [`docs/public_datasets.md`](docs/public_datasets.md) | Public research datasets and safe integration rules |
-
----
-
-## License
-
-MIT — see `LICENSE` for details.
+**Life, Decoded**  
+*Your habits have patterns. Understand them with evidence.* ✨
