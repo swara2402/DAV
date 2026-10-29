@@ -1,6 +1,8 @@
 """tests/test_api_endpoints.py — API integration and security tests."""
 import pytest
 from fastapi.testclient import TestClient
+from config import settings
+from auth import _decode_demo_token
 
 
 def test_health_check(client: TestClient):
@@ -179,3 +181,10 @@ def test_demo_seed_idempotency(client: TestClient, demo_auth_headers: dict):
     assert r2.status_code == 200
     assert r2.json()["already_seeded"] is True
 
+
+
+
+def test_demo_token_is_rejected_outside_demo_mode(monkeypatch):
+    monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+    assert settings.is_demo is False
+    assert _decode_demo_token("demo_maya") is None
