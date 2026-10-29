@@ -222,7 +222,7 @@ async def update_task(
         return db.fetchone("SELECT * FROM tasks WHERE id = ?", (task_id,))
     else:
         db.client.table("tasks").update(updates).eq("id", task_id).eq("user_id", user_id).execute()
-        resp = db.client.table("tasks").select("*").eq("id", task_id).execute()
+        resp = db.client.table("tasks").select("*").eq("id", task_id).eq("user_id", user_id).execute()
         return resp.data[0]
 
 
