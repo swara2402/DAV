@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: life-decoded-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: VITE_DEMO_MODE
+        value: "false"
+      - key: SUPABASE_URL
+        value: https://tmyrdnhwmuxrikmtxexb.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DEMO_JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
