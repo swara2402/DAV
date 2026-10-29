@@ -7,6 +7,9 @@ ALTER TABLE public.insights ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.insight_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.demo_seed_runs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS profiles_select_own ON public.profiles;
+DROP POLICY IF EXISTS profiles_insert_own ON public.profiles;
+DROP POLICY IF EXISTS profiles_update_own ON public.profiles;
 DROP POLICY IF EXISTS profiles_owner_select ON public.profiles;
 CREATE POLICY profiles_owner_select ON public.profiles FOR SELECT TO authenticated USING (user_id = auth.uid()::text);
 DROP POLICY IF EXISTS profiles_owner_insert ON public.profiles;

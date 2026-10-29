@@ -226,6 +226,9 @@ def _insert_tasks(user_id: str, rows: list[dict], db: Any) -> int:
             completed_at = row.get("completed_at") or None
             if completed_at == "" or completed_at == "None":
                 completed_at = None
+            elif completed_at:
+                # Database stores completion as a date, matching TaskCreate/TaskComplete.
+                completed_at = str(completed_at)[:10]
             due_date = row.get("due_date") or None
             if due_date == "" or due_date == "None":
                 due_date = None

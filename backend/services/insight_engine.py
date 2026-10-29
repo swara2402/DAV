@@ -204,12 +204,12 @@ def _compute_week(
     snapshot_dt = _sunday_snapshot(monday)
     snapshot_date = snapshot_dt.date()  # Sunday date
 
-    # Convenience food spending: expenses within Mon-Sun
-    mask = (
-        (expenses_df["date"] >= monday)
-        & (expenses_df["date"] <= sunday)
-        & (expenses_df["category"] == "convenience_food")
-    )
+    # A week with no expense records is unobserved, not proof of zero spending.
+    week_expense_mask = (expenses_df["date"] >= monday) & (expenses_df["date"] <= sunday)
+    expense_record_count = int(week_expense_mask.sum())
+    spending_observed = expense_record_count > 0
+    # Convenience food spending: transactions in this observed Mon-Sun week.
+    mask = week_expense_mask & (expenses_df["category"] == "convenience_food")
     cf_spending = float(expenses_df.loc[mask, "amount"].sum())
 
     # Exclude tasks that had not been created by the historical snapshot.
@@ -250,6 +250,8 @@ def _compute_week(
         "snapshot": snapshot_date.isoformat(),
         "overdue_count": overdue_count,
         "convenience_food_spending": round(cf_spending, 2),
+        "expense_record_count": expense_record_count,
+        "spending_observed": spending_observed,
         "overdue_task_titles": overdue_titles,
         "is_qualifying": is_qualifying,
         "group": "qualifying" if is_qualifying else "baseline",
@@ -375,10 +377,19 @@ def calculate_overdue_convenience_insight(
     total_weeks = len(weekly_breakdown)
 
     # ------------------------------------------------------------------
-    # 4. Split into qualifying / baseline
+    # 4. Split only weeks with observed expense records into qualifying / baseline.
+    # Missing logs are unknown, not zero-spend baseline weeks.
     # ------------------------------------------------------------------
-    qualifying = [w for w in weekly_breakdown if w["is_qualifying"]]
-    baseline = [w for w in weekly_breakdown if not w["is_qualifying"]]
+    observed_weeks = [w for w in weekly_breakdown if w.get("spending_observed", False)]
+    if len(observed_weeks) < min_a:
+        return _insufficient(
+            "insufficient_expense_coverage",
+            weekly_breakdown=weekly_breakdown,
+            total_weeks=len(observed_weeks),
+        )
+
+    qualifying = [w for w in observed_weeks if w["is_qualifying"]]
+    baseline = [w for w in observed_weeks if not w["is_qualifying"]]
 
     n_qualifying = len(qualifying)
     n_baseline = len(baseline)
@@ -481,6 +492,8 @@ def calculate_overdue_convenience_insight(
             "week_end": w["week_end"],
             "overdue_count": w["overdue_count"],
             "convenience_food_spending": w["convenience_food_spending"],
+            "expense_record_count": w.get("expense_record_count", 0),
+            "spending_observed": w.get("spending_observed", False),
             "overdue_task_titles": w["overdue_task_titles"],
         }
 

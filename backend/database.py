@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 CREATE TABLE IF NOT EXISTS expenses (
     id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL,
     amount REAL NOT NULL CHECK(amount >= 0),
-    category TEXT NOT NULL CHECK(category IN ('convenience_food','groceries','transport','shopping','bills','other')),
+    category TEXT NOT NULL CHECK(category IN ('convenience_food','groceries','transport','shopping','bills','utilities','entertainment','healthcare','clothing','education','personal_care','dining_out','subscriptions','household','other')),
     description TEXT DEFAULT '', data_source TEXT NOT NULL DEFAULT 'user_entered',
     created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES profiles(user_id)

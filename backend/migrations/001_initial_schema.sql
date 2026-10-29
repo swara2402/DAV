@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.expenses (
     user_id TEXT NOT NULL,
     date DATE NOT NULL,
     amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
-    category TEXT NOT NULL CHECK (category IN ('convenience_food','groceries','transport','shopping','bills','other')),
+    category TEXT NOT NULL CHECK (category IN ('convenience_food','groceries','transport','shopping','bills','utilities','entertainment','healthcare','clothing','education','personal_care','dining_out','subscriptions','household','other')),
     description TEXT NOT NULL DEFAULT '',
     data_source TEXT NOT NULL DEFAULT 'user_entered' CHECK (data_source IN ('user_entered','demo_synthetic')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

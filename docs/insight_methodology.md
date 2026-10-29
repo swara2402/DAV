@@ -25,7 +25,7 @@ For each week $w_i$, a historical snapshot $S_i$ is evaluated at Sunday closing 
 
 A task $T$ with due date $d(T)$ and completion date $c(T)$ is defined as **overdue at snapshot $S_i$** if and only if:
 
-$$\text{Overdue}(T, S_i) \iff d(T) \le s_i \land \left( c(T) \text{ is } \emptyset \lor c(T) > s_i \right)$$
+$\text{Overdue}(T, S_i) \iff d(T) < s_i \land \left( c(T) \text{ is } \emptyset \lor c(T) > s_i \right)$
 
 The total overdue count for week $w_i$ is:
 
@@ -43,7 +43,9 @@ The weeks in $\mathcal{W}$ are partitioned into two disjoint subsets based on th
    $$N_{\mathcal{B}} = |\mathcal{B}|$$
 
 ### 2.4 Weekly Convenience Food Spending
-For any week $w_i$, convenience food spending $C_i$ is the aggregate sum of eligible transaction records:
+A week is treated as spending-observed only when at least one expense record of any category exists during that week. Weeks with no expense records are treated as **unobserved**, not as evidence of zero spending, and are excluded from the qualifying/baseline comparison. The engine requires at least `MIN_ANALYSIS_WEEKS` observed weeks. This is still only a proxy for logging completeness: a transaction log cannot prove that every purchase was recorded.
+
+For an observed week $w_i$, convenience food spending $C_i$ is the aggregate sum of eligible transaction records:
 
 $$C_i = \sum_{e \in \mathcal{E}_{w_i}, \text{category}(e) = \text{'convenience\_food'}} \text{amount}(e)$$
 
@@ -87,3 +89,11 @@ If any condition fails to hold, the engine halts calculation and returns:
 - **Formula Version**: `v1.0`
 - **Snapshot Timezone**: `Asia/Kolkata` (IST)
 
+
+
+## 5. Interpretation and data coverage
+
+- A week with no expense rows is not silently counted as a zero-spending week. It is marked unobserved and excluded from the comparison.
+- A week with expense rows but no `convenience_food` rows contributes zero convenience-food spend. This is only a reasonable interpretation if the user's expense logging is sufficiently complete.
+- Missing expense logs cannot be distinguished perfectly from truly zero spending without an explicit weekly check-in or completeness marker. The app should communicate this limitation.
+- Confidence intervals describe each group's mean separately. The reported ratio is a descriptive comparison, not a causal effect and not a population-level estimate.

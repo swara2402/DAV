@@ -75,8 +75,19 @@ async def create_action(
     action_id = str(uuid.uuid4())
     now = _now()
 
-    # A manual action can exist without a cached insight; keep the DB contract non-null.
+    # Only reference an insight owned by this user. Manual actions use a non-linked marker.
     insight_id = body.insight_id or "manual"
+    if body.insight_id:
+        if db.mode == "sqlite":
+            owned_insight = db.fetchone(
+                "SELECT id FROM insights WHERE id = ? AND user_id = ?",
+                (body.insight_id, user_id),
+            )
+        else:
+            result = db.client.table("insights").select("id").eq("id", body.insight_id).eq("user_id", user_id).limit(1).execute()
+            owned_insight = result.data[0] if result.data else None
+        if not owned_insight:
+            raise HTTPException(status_code=404, detail="Insight not found")
 
     data = {
         "id": action_id,
@@ -177,7 +188,9 @@ async def get_action_followup(
     # Use tried_at from migration instead of created_at
     action_datetime = action["tried_at"].replace("Z", "+00:00") if "Z" in action["tried_at"] else action["tried_at"]
     created_at_dt = datetime.fromisoformat(action_datetime)
-    created_date = created_at_dt.date()
+    if created_at_dt.tzinfo is None:
+        created_at_dt = created_at_dt.replace(tzinfo=timezone.utc)
+    created_date = created_at_dt.astimezone(ZoneInfo("Asia/Kolkata")).date()
     today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
     days_elapsed = (today - created_date).days
     followup_window_days = action.get("followup_window_days", 28)
@@ -338,7 +351,7 @@ async def get_action_followup(
         followup_window_days=followup_window_days,
         days_elapsed=days_elapsed,
         status="sufficient_data",
-        message=(f"Follow-up window has {len(followup_weeks)} observed weeks. " + (f"Baseline averaged ₹{baseline_weekly_avg:,.2f}/week; follow-up averaged ₹{followup_weekly_avg:,.2f}/week ({percent_change}% change)." if baseline_weekly_avg is not None and percent_change is not None else "Not enough baseline coverage to calculate a reliable percentage change.")),
+        message=(f"Follow-up window has {len(followup_weeks)} observed weeks. " + (f"Baseline averaged ₹{baseline_weekly_avg:,.2f}/week; follow-up averaged ₹{followup_weekly_avg:,.2f}/week ({percent_change}% change)." if baseline_weekly_avg is not None and percent_change is not None else ("Baseline convenience-food spending was zero, so percentage change is undefined." if baseline_weekly_avg == 0 else "Not enough baseline coverage to calculate a reliable percentage change."))),
         baseline_cf_avg=baseline_weekly_avg,
         followup_cf_avg=followup_weekly_avg,
         percent_change=percent_change,

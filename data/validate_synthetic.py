@@ -13,6 +13,7 @@ Run from project root:
 import csv
 import os
 import sys
+from collections import Counter
 from datetime import date, datetime, timedelta
 
 # ---------------------------------------------------------------------------
@@ -97,12 +98,14 @@ def validate_schema(rows: list, expected_cols: list, file_name: str):
 # ---------------------------------------------------------------------------
 
 def validate_no_duplicate_ids(rows: list, file_name: str):
-    ids = [r["id"] for r in rows]
-    dupes = [i for i in ids if ids.count(i) > 1]
-    if dupes:
-        fail(f"{file_name}: duplicate IDs: {set(dupes)}")
+    ids = [r.get("id", "") for r in rows]
+    counts = Counter(ids)
+    dupes = sorted(value for value, count in counts.items() if value and count > 1)
+    missing = sum(not value for value in ids)
+    if dupes or missing:
+        fail(f"{file_name}: duplicate IDs: {dupes[:10]}; missing IDs: {missing}")
     else:
-        ok(f"{file_name}: no duplicate IDs")
+        ok(f"{file_name}: no duplicate or missing IDs")
 
 
 # ---------------------------------------------------------------------------
@@ -206,13 +209,14 @@ def validate_task_dates(rows: list, file_name: str):
             due_d      = date.fromisoformat(r["due_date"])
             due_dt     = datetime(due_d.year, due_d.month, due_d.day, 23, 59, 59)
 
-            if created_dt > due_dt:
+            if created_dt.date() > due_d:
                 created_after_due.append(r["id"])
 
             comp = r.get("completed_at", "")
             if comp:
                 comp_dt = datetime.fromisoformat(comp)
-                if comp_dt < created_dt:
+                # Compare dates to avoid naive/aware datetime comparison errors.
+                if comp_dt.date() < created_dt.date():
                     completed_before_created.append(r["id"])
         except (ValueError, KeyError):
             pass  # Already caught by date format validation
@@ -359,6 +363,13 @@ def main():
     validate_no_duplicate_ids(arjun_exp,  "arjun_expenses")
     validate_no_duplicate_ids(maya_tasks, "maya_tasks")
     validate_no_duplicate_ids(arjun_tsk,  "arjun_tasks")
+    all_ids = [row.get("id", "") for rows in (maya_exp, arjun_exp, maya_tasks, arjun_tsk) for row in rows]
+    global_counts = Counter(all_ids)
+    global_dupes = sorted(value for value, count in global_counts.items() if value and count > 1)
+    if global_dupes:
+        fail(f"Across all four files: duplicate IDs: {global_dupes[:10]}")
+    else:
+        ok("Across all four files: IDs are globally unique")
 
     print("\n--- Date format checks ---")
     validate_dates_expenses(maya_exp,   "maya_expenses")

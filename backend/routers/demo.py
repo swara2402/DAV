@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 from typing import Literal
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from auth import get_current_user, require_demo_mode
 from database import get_db
 from services.demo_seeder import seed_persona, _clear_user_data
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/demo", tags=["demo"])
 
@@ -44,11 +47,12 @@ async def select_persona(
                 "These records do not represent real individuals or financial accounts."
             ),
         }
-    except Exception as e:
+    except Exception:
+        logger.exception("Failed to seed demo persona")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to seed demo persona: {str(e)}",
-        )
+            detail="Failed to load demo data. Check server logs and verify the bundled dataset files.",
+        ) from None
 
 
 @router.post("/reset", dependencies=[Depends(require_demo_mode)])
@@ -75,9 +79,10 @@ async def reset_demo_data(
             "message": "All workspace data for this session has been successfully cleared.",
             "user_id": user_id,
         }
-    except Exception as e:
+    except Exception:
+        logger.exception("Failed to reset demo data")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to reset demo data: {str(e)}",
-        )
+            detail="Failed to reset demo data. Please try again or contact support.",
+        ) from None
 

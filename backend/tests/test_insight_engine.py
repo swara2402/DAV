@@ -232,3 +232,14 @@ def test_task_created_after_snapshot_is_not_counted_historically():
     result = _compute_week(monday, expenses, tasks, overdue_threshold=1)
     assert result["overdue_count"] == 0
     assert result["is_qualifying"] is False
+
+
+
+def test_week_without_expense_records_is_marked_unobserved():
+    monday = date(2026, 8, 3)
+    expenses = pd.DataFrame(columns=["date", "amount", "category"])
+    tasks = pd.DataFrame(columns=["id", "title", "due_date", "completed_at"])
+    result = _compute_week(monday, expenses, tasks, overdue_threshold=3)
+    assert result["spending_observed"] is False
+    assert result["expense_record_count"] == 0
+    assert result["convenience_food_spending"] == 0.0
