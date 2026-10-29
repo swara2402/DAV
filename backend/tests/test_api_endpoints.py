@@ -139,6 +139,44 @@ def test_task_crud_and_completion(client: TestClient, fresh_auth_headers: dict):
     client.delete(f"/api/v1/tasks/{task_id}", headers=fresh_auth_headers)
 
 
+
+def test_task_rejects_blank_titles_and_dates_before_creation(client: TestClient, fresh_auth_headers: dict):
+    blank = client.post(
+        "/api/v1/tasks",
+        json={"title": "   ", "due_date": "2026-11-25"},
+        headers=fresh_auth_headers,
+    )
+    assert blank.status_code == 422
+
+    created = client.post(
+        "/api/v1/tasks",
+        json={
+            "title": "Plan weekly budget",
+            "created_at": "2026-10-20T10:00:00Z",
+            "due_date": "2026-10-25",
+            "category": "finance",
+        },
+        headers=fresh_auth_headers,
+    )
+    assert created.status_code == 201, created.text
+    task_id = created.json()["id"]
+
+    update = client.put(
+        f"/api/v1/tasks/{task_id}",
+        json={"due_date": "2026-10-19"},
+        headers=fresh_auth_headers,
+    )
+    assert update.status_code == 400
+
+    complete = client.post(
+        f"/api/v1/tasks/{task_id}/complete",
+        json={"completed_at": "2026-10-19"},
+        headers=fresh_auth_headers,
+    )
+    assert complete.status_code == 400
+
+    client.delete(f"/api/v1/tasks/{task_id}", headers=fresh_auth_headers)
+
 def test_action_and_followup_workflow(client: TestClient, demo_auth_headers: dict):
     # 1. Post 'Tried It' action
     action_resp = client.post(

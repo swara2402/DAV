@@ -15,6 +15,13 @@ class TaskCreate(BaseModel):
     completed_at: Optional[date] = None
     created_at: Optional[datetime] = None
 
+    @field_validator("title", mode="before")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("Title cannot be empty or whitespace")
+        return v.strip()
+
     @field_validator("category")
     @classmethod
     def validate_category(cls, v: Optional[str]) -> Optional[str]:
@@ -28,6 +35,13 @@ class TaskUpdate(BaseModel):
     category: Optional[str] = None
     due_date: Optional[date] = None
     completed_at: Optional[date] = None
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def validate_title(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and (not isinstance(v, str) or not v.strip()):
+            raise ValueError("Title cannot be empty or whitespace")
+        return v.strip() if isinstance(v, str) else v
 
     @field_validator("category")
     @classmethod

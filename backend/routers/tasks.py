@@ -34,6 +34,11 @@ def _ensure_profile_exists(user_id: str, email: str, db) -> None:
         }).execute()
 
 
+def _created_date(value: str) -> date:
+    """Return a stored task creation timestamp as a calendar date."""
+    return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+
+
 @router.get("", response_model=list[TaskOut])
 async def list_tasks(
     category: Optional[str] = None,
@@ -193,6 +198,12 @@ async def update_task(
     if not existing:
         raise HTTPException(status_code=404, detail="Task not found")
 
+    created_date = _created_date(existing["created_at"])
+    if body.due_date is not None and body.due_date < created_date:
+        raise HTTPException(status_code=400, detail="Task due date cannot be before task creation date")
+    if body.completed_at is not None and body.completed_at < created_date:
+        raise HTTPException(status_code=400, detail="Completion date cannot be before task creation date")
+
     now = _now()
     updates = {}
     if body.title is not None:
@@ -245,6 +256,9 @@ async def mark_task_complete(
 
     if not existing:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    if body.completed_at < _created_date(existing["created_at"]):
+        raise HTTPException(status_code=400, detail="Completion date cannot be before task creation date")
 
     now = _now()
     comp_str = body.completed_at.isoformat()
