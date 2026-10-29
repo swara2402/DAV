@@ -200,7 +200,7 @@ async def update_expense(
         return db.fetchone("SELECT * FROM expenses WHERE id = ?", (expense_id,))
     else:
         db.client.table("expenses").update(updates).eq("id", expense_id).eq("user_id", user_id).execute()
-        resp = db.client.table("expenses").select("*").eq("id", expense_id).execute()
+        resp = db.client.table("expenses").select("*").eq("id", expense_id).eq("user_id", user_id).execute()
         return resp.data[0]
 
 
