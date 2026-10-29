@@ -55,7 +55,7 @@ npm run dev
 
 The Vite development server proxies `/api` and `/health` to `http://127.0.0.1:8000`, so you can leave `VITE_API_BASE_URL` unset locally. The first backend startup creates the SQLite schema. Demo personas (Maya and Arjun) use synthetic data, not real bank connections or your personal financial records.
 
-**Important:** this is local demo mode, not production login. Do not deploy it publicly as a substitute for real authentication. Production mode intentionally requires a persistent database and real authentication configuration.
+**Important:** the default local setup is demo mode, not real account authentication. To try real Supabase Auth locally, copy `frontend/.env.example` to `frontend/.env`, keep `VITE_DEMO_MODE=false`, and ensure the Supabase Auth URL configuration allows your local `http://localhost:5173/auth` callback. Real-auth mode uses Supabase email/password registration, sign-in, session refresh, sign-out, and password recovery. Never put a service-role key in frontend environment variables.
 
 ---
 
@@ -99,10 +99,14 @@ See [`docs/architecture.md`](docs/architecture.md) for the full breakdown includ
 
 ### Frontend (`frontend/.env`)
 
+Copy `frontend/.env.example` to `frontend/.env` for a real-auth local setup.
+
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `VITE_API_BASE_URL` | Backend base URL, e.g. `http://localhost:8000` | ✅ Required |
-| `VITE_ENVIRONMENT` | `development` or `production` | Optional |
+| `VITE_DEMO_MODE` | `true` for demo workspaces, `false` for real account authentication | Required for mode selection |
+| `VITE_SUPABASE_URL` | Supabase project URL | Required for real auth |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser-safe Supabase publishable key (legacy `VITE_SUPABASE_ANON_KEY` is also accepted) | Required for real auth |
+| `VITE_API_BASE_URL` | Backend base URL, e.g. `http://localhost:8000`; leave unset to use the Vite proxy locally | Optional |
 
 > ⚠️ **Never commit `.env` files.** Both are listed in `.gitignore`.
 
@@ -171,6 +175,7 @@ This is a separate research dataset, not personal finance data. It contains acti
 
 - **Demo mode uses SQLite.** Production deployments require a Supabase PostgreSQL instance with Row Level Security enabled.
 - **No real bank integrations.** All expense data is entered manually or seeded from synthetic personas.
+- **Email delivery depends on Supabase Auth configuration.** Configure allowed redirect URLs and production email delivery before enabling public registration or password recovery.
 - **Insights require sufficient data.** The engine requires ≥ 3 qualifying weeks **and** ≥ 3 baseline weeks within the most recent 12 complete calendar weeks. If either group is missing, the dashboard shows an `insufficient_data` status with a specific explanation.
 - **Association, not causation.** The insight ratio describes a correlation in user-entered data — it does not prove that task overload *causes* higher spending.
 
