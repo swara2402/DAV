@@ -8,7 +8,7 @@
 
 **Life, Decoded** helps young professionals (aged 21–26) uncover hidden correlations between their workload and spending behavior. The central insight the system surfaces:
 
-> *During weeks with high task overload (≥ 3 overdue tasks), users tend to spend significantly more on convenience food.*
+> *In this user's logged data, weeks with at least 3 overdue tasks can be compared with other observed weeks for convenience-food spending. The result is an association, not a causal or population-level claim.*
 
 Rather than just showing budgets, Life, Decoded explains *why* spending patterns emerge — and backs every insight with an evidence panel showing the exact dates, weekly totals, and formula used.
 
@@ -82,6 +82,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full breakdown includ
 | `DEMO_JWT_SECRET` | Demo-token signing secret, at least 32 characters in production | Development/demo or production config |
 | `SUPABASE_URL` | Supabase project URL | Production only |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (backend only, never frontend) | Production only |
+| `SUPABASE_ANON_KEY` | Public Supabase anon key, not a signing secret | If required by deployment |
 | `SQLITE_PATH` | SQLite database path for development/demo | Optional |
 | `CORS_ORIGINS` | Comma-separated list of allowed origins | Optional (defaults to localhost) |
 | `OVERDUE_THRESHOLD` | Minimum overdue tasks to classify a qualifying week (default: `3`) | Optional |
@@ -129,19 +130,19 @@ npm run build
 
 ### Backend → Railway
 
-1. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub**.
-2. Select the repo; set **Root Directory** to `backend`.
-3. Add environment variables:
-   - `ENVIRONMENT=production`\n   - `VITE_DEMO_MODE=false`\n   - `DEMO_JWT_SECRET=<unique random 32+ character secret>`
-   - `DEMO_JWT_SECRET=<unique 32+ character secret>`
+1. Create a Railway project and deploy the repository with root directory `backend`.
+2. Set these backend environment variables:
+   - `ENVIRONMENT=production`
+   - `VITE_DEMO_MODE=false`
+   - `DEMO_JWT_SECRET=<unique random secret of at least 32 characters>`
    - `SUPABASE_URL=<your Supabase project URL>`
-   - `SUPABASE_SERVICE_ROLE_KEY=<service role key>`
-   - `SUPABASE_ANON_KEY=<public anon key, if required by your deployment>`
-   - `SUPABASE_JWT_SECRET=<legacy HS256 JWT secret only, if your project still uses HS256>`\n\n> Production JWT verification uses the project Auth JWKS endpoint for asymmetric keys. Never use the public anon key as a JWT signing secret. Apply SQL migrations in order in Supabase before enabling production traffic.
+   - `SUPABASE_SERVICE_ROLE_KEY=<server-only service role key>`
    - `CORS_ORIGINS=https://<your-vercel-app>.vercel.app`
-4. Set the start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-5. Deploy.
+   - For legacy Supabase projects using HS256 only: `SUPABASE_JWT_SECRET=<legacy JWT secret>`
+3. Use the start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`.
+4. Apply migrations `001_initial_schema.sql`, `002_indexes.sql`, `003_rls_policies.sql`, and `004_security_hardening.sql` in order in Supabase before enabling production traffic.
 
+Production JWT verification uses the project's Auth JWKS endpoint for asymmetric signing keys. Never use the public anon key as a JWT signing secret. The API uses a service-role client, which bypasses RLS, so every database query must remain explicitly scoped to the authenticated user's `user_id`.
 ---
 
 ## Known Limitations
