@@ -13,6 +13,7 @@ Run from project root:
 import csv
 import os
 import sys
+from collections import Counter
 from datetime import date, datetime, timedelta
 
 # ---------------------------------------------------------------------------
@@ -97,12 +98,14 @@ def validate_schema(rows: list, expected_cols: list, file_name: str):
 # ---------------------------------------------------------------------------
 
 def validate_no_duplicate_ids(rows: list, file_name: str):
-    ids = [r["id"] for r in rows]
-    dupes = [i for i in ids if ids.count(i) > 1]
-    if dupes:
-        fail(f"{file_name}: duplicate IDs: {set(dupes)}")
+    ids = [r.get("id", "") for r in rows]
+    counts = Counter(ids)
+    dupes = sorted(value for value, count in counts.items() if value and count > 1)
+    missing = sum(not value for value in ids)
+    if dupes or missing:
+        fail(f"{file_name}: duplicate IDs: {dupes[:10]}; missing IDs: {missing}")
     else:
-        ok(f"{file_name}: no duplicate IDs")
+        ok(f"{file_name}: no duplicate or missing IDs")
 
 
 # ---------------------------------------------------------------------------
