@@ -75,8 +75,19 @@ async def create_action(
     action_id = str(uuid.uuid4())
     now = _now()
 
-    # A manual action can exist without a cached insight; keep the DB contract non-null.
+    # Only reference an insight owned by this user. Manual actions use a non-linked marker.
     insight_id = body.insight_id or "manual"
+    if body.insight_id:
+        if db.mode == "sqlite":
+            owned_insight = db.fetchone(
+                "SELECT id FROM insights WHERE id = ? AND user_id = ?",
+                (body.insight_id, user_id),
+            )
+        else:
+            result = db.client.table("insights").select("id").eq("id", body.insight_id).eq("user_id", user_id).limit(1).execute()
+            owned_insight = result.data[0] if result.data else None
+        if not owned_insight:
+            raise HTTPException(status_code=404, detail="Insight not found")
 
     data = {
         "id": action_id,
