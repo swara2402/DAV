@@ -45,8 +45,9 @@ class TaskOut(BaseModel):
     id: str
     user_id: str
     title: str
-    category: Optional[str]
-    due_date: Optional[str]
+    category: str
+    due_date: str
     completed_at: Optional[str]
-    created_at: str
-    updated_at: str
+    created_at: str  # User-facing created_at (from task creation)
+    db_created_at: str
+    db_updated_at: str

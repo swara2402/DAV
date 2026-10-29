@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from auth import get_current_user
+from auth import get_current_user, require_non_demo
 from database import get_db
 from models.expense import ExpenseCreate, ExpenseUpdate, ExpenseOut
 
@@ -47,6 +47,7 @@ async def list_expenses(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
     user: dict = Depends(get_current_user),
+    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]

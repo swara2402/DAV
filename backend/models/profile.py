@@ -6,14 +6,13 @@ from pydantic import BaseModel
 
 
 class ProfileOut(BaseModel):
-    id: str
-    email: Optional[str]
-    name: Optional[str]
-    currency: str
+    user_id: str
+    display_name: Optional[str]
+    selected_persona: Optional[str]
     created_at: str
     updated_at: str
 
 
 class ProfileUpdate(BaseModel):
-    name: Optional[str] = None
-    currency: Optional[str] = None
+    display_name: Optional[str] = None
+    selected_persona: Optional[str] = None

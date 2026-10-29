@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 
-from auth import get_current_user
+from auth import get_current_user, require_non_demo
 from database import get_db
 from models.insight import InsightOut
 from services.insight_engine import calculate_overdue_convenience_insight
@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api/v1/insights", tags=["insights"])
 @router.get("/overdue-convenience", response_model=InsightOut)
 async def get_overdue_convenience_insight(
     user: dict = Depends(get_current_user),
+    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     """
@@ -72,4 +73,3 @@ async def get_overdue_convenience_insight(
             pass
 
     return result
-

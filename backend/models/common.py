@@ -47,9 +47,4 @@ VALID_TASK_CATEGORIES = {
     "health",
     "finance",
     "household",
-    "home",
-    "social",
-    "learning",
-    "errands",
-    "other",
 }

@@ -6,7 +6,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from auth import get_current_user
+from auth import get_current_user, require_non_demo
 from database import get_db
 from models.task import TaskCreate, TaskUpdate, TaskComplete, TaskOut
 
@@ -20,20 +20,20 @@ def _now() -> str:
 def _ensure_profile_exists(user_id: str, email: str, db) -> None:
     now = _now()
     if db.mode == "sqlite":
-        row = db.fetchone("SELECT id FROM profiles WHERE id = ?", (user_id,))
+        row = db.fetchone("SELECT user_id FROM profiles WHERE user_id = ?", (user_id,))
         if not row:
             db.execute(
-                "INSERT OR IGNORE INTO profiles (id, email, name, currency, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (user_id, email, user_id, "INR", now, now),
+                "INSERT OR IGNORE INTO profiles (user_id, display_name, selected_persona, db_created_at, db_updated_at) VALUES (?, ?, ?, ?, ?)",
+                (user_id, "User", None, now, now),
             )
     else:
         try:
             db.client.table("profiles").upsert({
-                "id": user_id,
-                "email": email,
-                "currency": "INR",
-                "created_at": now,
-                "updated_at": now,
+                "user_id": user_id,
+                "display_name": "User",
+                "selected_persona": None,
+                "db_created_at": now,
+                "db_updated_at": now,
             }).execute()
         except Exception:
             pass
@@ -44,6 +44,7 @@ async def list_tasks(
     category: Optional[str] = None,
     status_filter: Optional[str] = Query(None, alias="status", description="completed|open|overdue"),
     user: dict = Depends(get_current_user),
+    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -84,6 +85,7 @@ async def list_tasks(
 async def create_task(
     body: TaskCreate,
     user: dict = Depends(get_current_user),
+    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -91,8 +93,16 @@ async def create_task(
     task_id = str(uuid.uuid4())
     now = _now()
     created_str = body.created_at.isoformat() if body.created_at else now
-    due_str = body.due_date.isoformat() if body.due_date else None
+    due_str = body.due_date.isoformat() if body.due_date else (date.today().isoformat())  # Require due date per migration
     comp_str = body.completed_at.isoformat() if body.completed_at else None
+
+    # Validate category is one of the allowed values per migration CHECK constraint
+    allowed_categories = {'work', 'personal', 'health', 'finance', 'household'}
+    if body.category not in allowed_categories:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid category. Must be one of: {', '.join(allowed_categories)}"
+        )
 
     # Temporal validation
     if due_str and body.created_at and body.due_date:
@@ -112,18 +122,20 @@ async def create_task(
         "id": task_id,
         "user_id": user_id,
         "title": body.title.strip(),
-        "category": body.category or "other",
+        "category": body.category,
         "due_date": due_str,
         "completed_at": comp_str,
         "created_at": created_str,
-        "updated_at": now,
+        "db_created_at": now,
+        "db_updated_at": now,
+        "data_source": "user_entered"  # Default to user_entered per migration
     }
 
     if db.mode == "sqlite":
         db.execute(
             """
-            INSERT INTO tasks (id, user_id, title, category, due_date, completed_at, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO tasks (id, user_id, title, category, due_date, completed_at, created_at, db_created_at, db_updated_at, data_source)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 task_id,
@@ -134,6 +146,8 @@ async def create_task(
                 comp_str,
                 created_str,
                 now,
+                now,
+                "user_entered",
             ),
         )
         return db.fetchone("SELECT * FROM tasks WHERE id = ?", (task_id,))
@@ -148,6 +162,7 @@ async def create_task(
 async def get_task(
     task_id: str,
     user: dict = Depends(get_current_user),
+    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -170,6 +185,7 @@ async def update_task(
     task_id: str,
     body: TaskUpdate,
     user: dict = Depends(get_current_user),
+    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -191,11 +207,18 @@ async def update_task(
         updates["title"] = body.title.strip()
     if body.category is not None:
         updates["category"] = body.category
+        # Validate category if it's being updated
+        allowed_categories = {'work', 'personal', 'health', 'finance', 'household'}
+        if updates["category"] not in allowed_categories:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid category. Must be one of: {', '.join(allowed_categories)}"
+            )
     if body.due_date is not None:
         updates["due_date"] = body.due_date.isoformat()
     if body.completed_at is not None:
         updates["completed_at"] = body.completed_at.isoformat()
-    updates["updated_at"] = now
+    updates["db_updated_at"] = now
 
     if db.mode == "sqlite":
         set_clause = ", ".join(f"{k} = ?" for k in updates)
@@ -216,6 +239,7 @@ async def mark_task_complete(
     task_id: str,
     body: TaskComplete,
     user: dict = Depends(get_current_user),
+    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
@@ -236,14 +260,14 @@ async def mark_task_complete(
 
     if db.mode == "sqlite":
         db.execute(
-            "UPDATE tasks SET completed_at = ?, updated_at = ? WHERE id = ? AND user_id = ?",
+            "UPDATE tasks SET completed_at = ?, db_updated_at = ? WHERE id = ? AND user_id = ?",
             (comp_str, now, task_id, user_id),
         )
         return db.fetchone("SELECT * FROM tasks WHERE id = ?", (task_id,))
     else:
         db.client.table("tasks").update({
             "completed_at": comp_str,
-            "updated_at": now,
+            "db_updated_at": now,
         }).eq("id", task_id).eq("user_id", user_id).execute()
         resp = db.client.table("tasks").select("*").eq("id", task_id).execute()
         return resp.data[0]
@@ -253,6 +277,7 @@ async def mark_task_complete(
 async def delete_task(
     task_id: str,
     user: dict = Depends(get_current_user),
+    _: None = Depends(require_non_demo),
     db=Depends(get_db),
 ):
     user_id = user["user_id"]
