@@ -63,7 +63,7 @@ class Settings(BaseSettings):
 
     @property
     def data_dir_path(self):
-        return (Path(__file__).resolve().parent.parent / self.DATA_DIR).resolve()
+        return (Path(__file__).resolve().parent / self.DATA_DIR).resolve()
 
     def _cors_origins(self) -> list[str]:
         return [item.strip().rstrip("/") for item in os.getenv("CORS_ORIGINS", "").split(",") if item.strip()]
