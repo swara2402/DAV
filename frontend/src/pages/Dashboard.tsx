@@ -222,7 +222,7 @@ export const Dashboard: React.FC = () => {
                 ) : (
                   <>
                     Data accumulation in progress. Life, Decoded requires at least 3 qualifying weeks and
-                    3 baseline weeks to report a statistically confident ratio.
+                    3 baseline weeks before showing this descriptive comparison. This threshold supports a more stable summary, but does not establish statistical significance or causation.
                   </>
                 )}
               </p>
@@ -362,8 +362,11 @@ export const Dashboard: React.FC = () => {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-xs text-zinc-400">
-                No weekly data available yet.
+              <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-xs text-zinc-500 px-4">
+                <p>No weekly spending records are available for this period.</p>
+                <button type="button" onClick={() => setIsExpenseModalOpen(true)} className="font-semibold text-zinc-900 dark:text-zinc-100 underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
+                  Add your first expense
+                </button>
               </div>
             )}
           </div>
@@ -445,8 +448,11 @@ export const Dashboard: React.FC = () => {
                 </ComposedChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-xs text-zinc-400">
-                No breakdown data available.
+              <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-xs text-zinc-500 px-4">
+                <p>A workload and spending comparison will appear when weekly records are available.</p>
+                <button type="button" onClick={() => setIsTaskModalOpen(true)} className="font-semibold text-zinc-900 dark:text-zinc-100 underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
+                  Add a task
+                </button>
               </div>
             )}
           </div>
@@ -482,7 +488,10 @@ export const Dashboard: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="py-6 text-center text-zinc-400 text-xs">No expense records yet.</div>
+              <div className="py-6 flex flex-col items-center gap-2 text-center text-zinc-500 text-xs">
+                <p>No expense records yet. Add one manually or import a supported CSV.</p>
+                <button type="button" onClick={() => setIsExpenseModalOpen(true)} className="font-semibold text-zinc-900 dark:text-zinc-100 underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Add an expense</button>
+              </div>
             )}
           </div>
         </div>
