@@ -22,7 +22,7 @@ async def get_my_profile(user: dict = Depends(get_current_user), db=Depends(get_
     if profile:
         return profile
     now = _now()
-    profile = {"user_id": user_id, "display_name": user.get("email", "").split("@")[0] or "User",
+    profile = {"user_id": user_id, "display_name": (user.get("email", "").split("@")[0] or "User").title(),
                "selected_persona": user_id.removeprefix("demo_") if user.get("is_demo") else None,
                "created_at": now, "updated_at": now}
     if db.mode == "sqlite":
