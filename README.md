@@ -55,7 +55,7 @@ npm run dev
 
 The Vite development server proxies `/api` and `/health` to `http://127.0.0.1:8000`, so you can leave `VITE_API_BASE_URL` unset locally. The first backend startup creates the SQLite schema. Demo personas (Maya and Arjun) use synthetic data, not real bank connections or your personal financial records.
 
-**Important:** this is local demo mode, not production login. Do not deploy it publicly as a substitute for real authentication. Production mode intentionally requires a persistent database and real authentication configuration.
+**Important:** this is local demo mode, not production login. Do not deploy it publicly as a substitute for real authentication. Production mode requires a persistent database and authentication configuration, but **real user sign-in is not implemented in the current frontend yet**. The current Auth page only offers demo workspaces. Do not expose this build as a production personal-finance service until real Supabase Auth is integrated and tested.
 
 ---
 
@@ -86,7 +86,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full breakdown includ
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `ENVIRONMENT` | `development` or `production` | ✅ Required |
+| `ENVIRONMENT` | `development`, `demo`, `staging`, or `production` | Required |
 | `DEMO_JWT_SECRET` | Unique secret of at least 32 characters; required by production configuration | Required |
 | `VITE_DEMO_MODE` | Must be `false` for production backend configuration | Production only |
 | `SUPABASE_URL` | Supabase project URL | Production only |
@@ -101,7 +101,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full breakdown includ
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `VITE_API_BASE_URL` | Backend base URL, e.g. `http://localhost:8000` | ✅ Required |
+| `VITE_API_BASE_URL` | Backend base URL; leave unset for local Vite proxy, set to deployed API origin for hosted frontend | Required for hosted frontend |
 | `VITE_ENVIRONMENT` | `development` or `production` | Optional |
 
 > ⚠️ **Never commit `.env` files.** Both are listed in `.gitignore`.
@@ -131,6 +131,8 @@ npm run build
 ## Deployment
 
 ### Frontend → Vercel
+
+> **Launch blocker:** the current frontend only supports demo workspaces and does not implement real Supabase account registration/sign-in. The backend intentionally blocks demo endpoints in production. Complete the real-auth work in [`docs/production_readiness.md`](docs/production_readiness.md) before treating this as a usable production deployment.
 
 1. Push your repository to GitHub.
 2. Go to [vercel.com](https://vercel.com) → **New Project** → import your repo.
