@@ -9,8 +9,9 @@ import {
 import {
   AreaChart,
   Area,
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -24,7 +25,7 @@ import { TaskModal } from '../components/TaskModal'
 import { useAuth } from '../contexts/AuthContext'
 import { getDashboardSummary, getInsight, getExpenses, getTasks, importExpensesCsv } from '../lib/api'
 import type { DashboardSummary, InsightData, Expense, Task } from '../types'
-import { formatINR, formatDate, formatCategoryName } from '../lib/utils'
+import { formatINR, formatDate, formatCategoryName, getLocalDateRange } from '../lib/utils'
 
 export const Dashboard: React.FC = () => {
   const { activePersona } = useAuth()
@@ -49,10 +50,7 @@ export const Dashboard: React.FC = () => {
     setLoading(true)
     setError(null)
     try {
-      const today = new Date()
-      const endStr = today.toISOString().slice(0, 10)
-      const startDate = new Date(today.getTime() - periodDays * 24 * 60 * 60 * 1000)
-      const startStr = startDate.toISOString().slice(0, 10)
+      const { start: startStr, end: endStr } = getLocalDateRange(periodDays)
 
       const [sumData, insData, expData, tskData] = await Promise.all([
         getDashboardSummary(startStr, endStr),
@@ -381,7 +379,7 @@ export const Dashboard: React.FC = () => {
           <div className="h-60 w-full">
             {insight?.weekly_breakdown && insight.weekly_breakdown.length > 0 ? (
               <ResponsiveContainer width="100%" height={240}>
-                <BarChart
+                <ComposedChart
                   data={insight.weekly_breakdown}
                   margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
@@ -394,10 +392,20 @@ export const Dashboard: React.FC = () => {
                     opacity={0.5}
                   />
                   <YAxis
-                    tickFormatter={(val) => `₹${val}`}
+                    yAxisId="spend"
+                    tickFormatter={(val) => `₹${val >= 1000 ? `${Math.round(val / 1000)}k` : val}`}
                     tick={{ fontSize: 10, fill: '#888888' }}
                     stroke="#888888"
                     opacity={0.5}
+                  />
+                  <YAxis
+                    yAxisId="overdue"
+                    orientation="right"
+                    allowDecimals={false}
+                    tickFormatter={(val) => String(val)}
+                    tick={{ fontSize: 10, fill: '#D97706' }}
+                    stroke="#D97706"
+                    opacity={0.7}
                   />
                   <Tooltip
                     contentStyle={{
@@ -408,18 +416,29 @@ export const Dashboard: React.FC = () => {
                       fontSize: '11px',
                     }}
                     formatter={(val: any, name: any) => [
-                      name === 'convenience_food_spending' ? formatINR(Number(val)) : val,
-                      name === 'convenience_food_spending' ? 'Food Spend' : 'Overdue Tasks',
+                      name === 'Food delivery spend' ? formatINR(Number(val)) : `${val} tasks`,
+                      name,
                     ]}
                   />
                   <Bar
+                    yAxisId="spend"
                     dataKey="convenience_food_spending"
-                    name="Convenience Food (₹)"
+                    name="Food delivery spend"
                     fill="#10B981"
                     radius={[4, 4, 0, 0]}
                   />
+                  <Line
+                    yAxisId="overdue"
+                    dataKey="overdue_count"
+                    name="Overdue tasks"
+                    type="monotone"
+                    stroke="#D97706"
+                    strokeWidth={2}
+                    dot={{ r: 2.5 }}
+                    activeDot={{ r: 4 }}
+                  />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                </BarChart>
+                </ComposedChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center text-xs text-zinc-400">
