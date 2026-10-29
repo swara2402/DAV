@@ -34,29 +34,43 @@ class Settings(BaseSettings):
     def model_post_init(self, __context: Any) -> None:
         if self.ENVIRONMENT not in {"development", "demo", "staging", "production", "test"}:
             raise ValueError("ENVIRONMENT must be development, demo, staging, production, or test")
-        if self.is_production:
+        if self.uses_supabase:
+            environment_label = "production" if self.is_production else "staging"
             if self.VITE_DEMO_MODE.lower() == "true":
-                raise ValueError("VITE_DEMO_MODE cannot be true in production")
+                raise ValueError(f"VITE_DEMO_MODE cannot be true in {environment_label}")
             if not self.SUPABASE_URL or not self.SUPABASE_SERVICE_ROLE_KEY:
-                raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in production")
+                raise ValueError(
+                    f"SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in {environment_label}"
+                )
             parsed = urlparse(self.SUPABASE_URL)
             if parsed.scheme != "https" or not parsed.netloc:
-                raise ValueError("SUPABASE_URL must be a valid HTTPS URL in production")
+                raise ValueError(f"SUPABASE_URL must be a valid HTTPS URL in {environment_label}")
             origins = self._cors_origins()
             if not origins:
-                raise ValueError("CORS_ORIGINS must contain at least one explicit production origin")
+                raise ValueError(
+                    f"CORS_ORIGINS must contain at least one explicit {environment_label} origin"
+                )
             for origin in origins:
                 parsed_origin = urlparse(origin)
                 if origin == "*" or parsed_origin.scheme != "https" or not parsed_origin.netloc:
-                    raise ValueError("Production CORS origins must be explicit HTTPS origins; wildcards are forbidden")
-            if self.DEMO_JWT_SECRET == "demo-secret-key-change-in-production" or len(self.DEMO_JWT_SECRET) < 32:
+                    raise ValueError(
+                        f"{environment_label.title()} CORS origins must be explicit HTTPS origins; "
+                        "wildcards are forbidden"
+                    )
+            if self.is_production and (
+                self.DEMO_JWT_SECRET == "demo-secret-key-change-in-production"
+                or len(self.DEMO_JWT_SECRET) < 32
+            ):
                 raise ValueError("Set a unique DEMO_JWT_SECRET of at least 32 characters")
-            if not self.SUPABASE_JWT_SECRET and not self.SUPABASE_URL:
-                raise ValueError("Configure Supabase JWT verification")
 
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "production"
+
+    @property
+    def uses_supabase(self) -> bool:
+        """Use the hosted database in staging and production, never silently fall back to SQLite."""
+        return self.ENVIRONMENT in {"staging", "production"}
 
     @property
     def is_demo(self) -> bool:
@@ -72,7 +86,7 @@ class Settings(BaseSettings):
     @property
     def allowed_cors_origins(self) -> list[str]:
         configured = self._cors_origins()
-        if self.is_production:
+        if self.uses_supabase:
             return configured
         defaults = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000"]
         return list(dict.fromkeys(defaults + configured))

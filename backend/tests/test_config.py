@@ -57,3 +57,25 @@ def test_production_requires_supabase_server_credentials(monkeypatch: pytest.Mon
     monkeypatch.setenv("CORS_ORIGINS", "https://app.example.com")
     with pytest.raises(ValidationError, match="SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"):
         production_settings(SUPABASE_SERVICE_ROLE_KEY="")
+
+
+def test_staging_requires_hosted_database_configuration(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("CORS_ORIGINS", "https://staging.example.com")
+    configured = production_settings(ENVIRONMENT="staging", DEMO_JWT_SECRET="")
+    assert configured.uses_supabase
+    assert not configured.is_demo
+    with pytest.raises(ValidationError, match="SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"):
+        production_settings(ENVIRONMENT="staging", SUPABASE_SERVICE_ROLE_KEY="")
+
+
+def test_staging_database_selector_never_falls_back_to_sqlite(monkeypatch: pytest.MonkeyPatch):
+    import database
+
+    class FakeSupabaseDB:
+        pass
+
+    monkeypatch.setattr(database.settings, "ENVIRONMENT", "staging")
+    monkeypatch.setattr(database, "_db_instance", None)
+    monkeypatch.setattr(database, "SupabaseDB", FakeSupabaseDB)
+
+    assert isinstance(database.get_db_instance(), FakeSupabaseDB)
