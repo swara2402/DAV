@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight,
   Plus,
   AlertCircle,
+  Upload,
 } from 'lucide-react'
 import {
   AreaChart,
@@ -21,7 +22,7 @@ import { Layout } from '../components/Layout'
 import { ExpenseModal } from '../components/ExpenseModal'
 import { TaskModal } from '../components/TaskModal'
 import { useAuth } from '../contexts/AuthContext'
-import { getDashboardSummary, getInsight, getExpenses, getTasks } from '../lib/api'
+import { getDashboardSummary, getInsight, getExpenses, getTasks, importExpensesCsv } from '../lib/api'
 import type { DashboardSummary, InsightData, Expense, Task } from '../types'
 import { formatINR, formatDate, formatCategoryName } from '../lib/utils'
 
@@ -33,6 +34,9 @@ export const Dashboard: React.FC = () => {
   const [recentTasks, setRecentTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const [importMessage, setImportMessage] = useState<string | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
+  const csvInputRef = useRef<HTMLInputElement>(null)
 
   // Modals
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
@@ -65,6 +69,31 @@ export const Dashboard: React.FC = () => {
       setError(err.message || 'Failed to load dashboard data.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCsvImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (activePersona !== 'fresh') {
+      setImportMessage('Switch to your Personal workspace before importing private transactions.')
+      return
+    }
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setImportMessage('Please choose a CSV export from your bank or card provider.')
+      return
+    }
+    setIsImporting(true)
+    setImportMessage(null)
+    try {
+      const result = await importExpensesCsv(await file.text())
+      setImportMessage(`Imported ${result.imported} transactions. Skipped ${result.skipped} rows. Review categories and task dates before interpreting insights.`)
+      await fetchData()
+    } catch (err: any) {
+      setImportMessage(err.message || 'Could not import this CSV. Check the required columns and try again.')
+    } finally {
+      setIsImporting(false)
     }
   }
 
@@ -115,6 +144,22 @@ export const Dashboard: React.FC = () => {
             <option value={14}>Last 2 Weeks</option>
           </select>
 
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={handleCsvImport}
+          />
+          <button
+            onClick={() => csvInputRef.current?.click()}
+            disabled={isImporting || activePersona !== 'fresh'}
+            title={activePersona !== 'fresh' ? 'Switch to Personal workspace before importing real transactions' : 'Import a bank statement CSV'}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E8E6DF] dark:border-white/[0.08] bg-white dark:bg-[#141518] text-zinc-700 dark:text-zinc-200 text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>{isImporting ? 'Importing…' : 'Import CSV'}</span>
+          </button>
           <button
             onClick={() => setIsExpenseModalOpen(true)}
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-950 text-xs font-semibold shadow-sm transition-all"
@@ -124,6 +169,15 @@ export const Dashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {importMessage && (
+        <div className="mb-4 rounded-xl border border-sky-200 dark:border-sky-900/60 bg-sky-50 dark:bg-sky-950/30 p-3 text-xs text-sky-800 dark:text-sky-200">
+          <div>{importMessage}</div>
+          <div className="mt-1 text-[11px] opacity-80">
+            CSVs are processed by this app's backend. For sensitive statements, use a locally hosted instance and do not upload to a public demo deployment.
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between">
