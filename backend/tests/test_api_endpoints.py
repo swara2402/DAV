@@ -21,8 +21,8 @@ def test_profile_endpoints(client: TestClient, demo_auth_headers: dict):
     response = client.get("/api/v1/profiles/me", headers=demo_auth_headers)
     assert response.status_code == 200
     profile = response.json()
-    assert profile["id"] == "demo_maya"
-    assert profile["currency"] == "INR"
+    assert profile["user_id"] == "demo_maya"
+    assert profile["display_name"] == "Maya"
 
 
 def test_expense_crud_and_validation(client: TestClient, fresh_auth_headers: dict):
@@ -149,7 +149,7 @@ def test_action_and_followup_workflow(client: TestClient, demo_auth_headers: dic
     assert action_resp.status_code == 201
     action = action_resp.json()
     action_id = action["id"]
-    assert action["status"] == "pending"
+    assert action["followup_status"] == "pending"
 
     # 2. Check follow-up immediately -> should be insufficient_data with explanation
     followup_resp = client.get(f"/api/v1/actions/{action_id}/followup", headers=demo_auth_headers)
