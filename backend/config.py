@@ -29,6 +29,15 @@ class Settings(BaseSettings):
     DEMO_JWT_SECRET: str = "demo-secret-key-change-in-production"
     VITE_DEMO_MODE: str = "true"
 
+    def model_post_init(self, __context__: Any) -> None:
+        """Validate critical configuration after loading."""
+        # Fail closed in production if default secrets are still in use
+        if self.is_production:
+            if not self.SUPABASE_URL or not self.SUPABASE_SERVICE_ROLE_KEY:
+                raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in production")
+            if self.DEMO_JWT_SECRET == "demo-secret-key-change-in-production":
+                raise ValueError("DEMO_JWT_SECRET must be changed from default in production")
+
     # SQLite path for demo/dev
     SQLITE_PATH: str = "./demo.db"
 

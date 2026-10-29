@@ -36,12 +36,12 @@ bearer_scheme = HTTPBearer(auto_error=False)
 def _decode_demo_token(token: str) -> dict[str, Any] | None:
     """
     Accept:
-      1. Plain token: "demo_maya", "demo_arjun", "demo_fresh"
+      1. Plain token: "demo_maya", "demo_arjun", "demo_fresh" (ONLY IN DEMO MODE)
       2. Signed JWT with sub = demo_<persona>
     Returns user dict or None if invalid.
     """
-    # Plain token shortcut
-    if token in DEMO_USER_IDS:
+    # Plain token shortcut - ONLY enabled in demo/development mode
+    if settings.is_demo and token in DEMO_USER_IDS:
         persona = token.split("_", 1)[1]
         return {
             "user_id": token,
@@ -49,14 +49,17 @@ def _decode_demo_token(token: str) -> dict[str, Any] | None:
             "is_demo": True,
         }
 
-    # Try JWT
+    # Try JWT - verify expiration except in pure demo mode
     try:
         from jose import jwt, JWTError  # type: ignore
+        # In pure demo mode (local development only), allow expired tokens for convenience
+        # In all other environments, verify token expiration
+        verify_exp = not (settings.ENVIRONMENT == "demo")
         payload = jwt.decode(
             token,
             settings.DEMO_JWT_SECRET,
             algorithms=["HS256"],
-            options={"verify_exp": False},
+            options={"verify_exp": verify_exp},
         )
         user_id = payload.get("sub") or payload.get("user_id", "")
         if user_id in DEMO_USER_IDS:

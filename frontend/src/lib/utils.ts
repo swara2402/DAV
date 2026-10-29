@@ -9,23 +9,21 @@ export function formatINR(amount: number | null | undefined): string {
   if (amount === null || amount === undefined || isNaN(amount)) {
     return '₹0'
   }
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
+  const formatted = new Intl.NumberFormat('en-IN', {
     maximumFractionDigits: 0,
   }).format(amount)
+  return `₹${formatted}`
 }
 
 export function formatINRPrecise(amount: number | null | undefined): string {
   if (amount === null || amount === undefined || isNaN(amount)) {
     return '₹0.00'
   }
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
+  const formatted = new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount)
+  return `₹${formatted}`
 }
 
 export function formatDate(dateStr: string | null | undefined): string {

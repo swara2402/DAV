@@ -284,6 +284,23 @@ def calculate_overdue_convenience_insight(
             "qualifying_avg": None,
             "baseline_avg": None,
             "ratio": None,
+            # Statistical rigor metadata (even for insufficient data)
+            "qualifying_ci_95": None,
+            "baseline_ci_95": None,
+            "qualifying_std": None,
+            "baseline_std": None,
+            "outliers_removed_qualifying": 0,
+            "outliers_removed_baseline": 0,
+            "statistical_methodology": {
+                "outlier_detection": "IQR method (1.5*IQR bounds)",
+                "confidence_interval": "95% CI using t-distribution approximation",
+                "limitations": [
+                    "Small sample size (n < 30), confidence intervals are approximate",
+                    "Correlation does not imply causation",
+                    "Analysis only captures within-user variation, not population-level effects",
+                    "Does not control for confounding variables (holidays, income, household size)"
+                ]
+            },
             "formula": "ratio = mean(qualifying_cf_spending) / mean(baseline_cf_spending)",
             "formula_version": FORMULA_VERSION,
             "recommended_action": (
@@ -366,13 +383,48 @@ def calculate_overdue_convenience_insight(
         )
 
     # ------------------------------------------------------------------
-    # 5. Compute averages with full precision
+    # 5. Compute averages with full precision + statistical metrics
     # ------------------------------------------------------------------
     qualifying_spendings = np.array([w["convenience_food_spending"] for w in qualifying], dtype=np.float64)
     baseline_spendings = np.array([w["convenience_food_spending"] for w in baseline], dtype=np.float64)
 
-    qualifying_avg_full = float(np.mean(qualifying_spendings))
-    baseline_avg_full = float(np.mean(baseline_spendings))
+    # Outlier detection and removal (IQR method) - only remove extreme values
+    def remove_outliers(data: np.ndarray) -> np.ndarray:
+        if len(data) < 4:  # Need enough data to compute robust stats
+            return data
+        q1, q3 = np.percentile(data, [25, 75])
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        return data[(data >= lower_bound) & (data <= upper_bound)]
+
+    # Apply outlier filtering
+    qualifying_filtered = remove_outliers(qualifying_spendings)
+    baseline_filtered = remove_outliers(baseline_spendings)
+
+    # If we filtered out all data, use original to avoid complete failure
+    if len(qualifying_filtered) == 0:
+        qualifying_filtered = qualifying_spendings
+    if len(baseline_filtered) == 0:
+        baseline_filtered = baseline_spendings
+
+    # Calculate statistical metrics
+    qualifying_avg_full = float(np.mean(qualifying_filtered))
+    baseline_avg_full = float(np.mean(baseline_filtered))
+    qualifying_std = float(np.std(qualifying_filtered, ddof=1)) if len(qualifying_filtered) > 1 else 0.0
+    baseline_std = float(np.std(baseline_filtered, ddof=1)) if len(baseline_filtered) > 1 else 0.0
+
+    # Standard error of the mean (for uncertainty estimates)
+    qualifying_sem = qualifying_std / np.sqrt(len(qualifying_filtered)) if len(qualifying_filtered) > 1 else 0.0
+    baseline_sem = baseline_std / np.sqrt(len(baseline_filtered)) if len(baseline_filtered) > 1 else 0.0
+
+    # 95% confidence intervals (approximate using t-distribution for small samples)
+    # For small n, t-critical ≈ 2.0 for 95% CI, which is a safe approximation
+    ci_multiplier = 2.0
+    qualifying_ci_low = qualifying_avg_full - ci_multiplier * qualifying_sem
+    qualifying_ci_high = qualifying_avg_full + ci_multiplier * qualifying_sem
+    baseline_ci_low = baseline_avg_full - ci_multiplier * baseline_sem
+    baseline_ci_high = baseline_avg_full + ci_multiplier * baseline_sem
 
     # Division by zero guard
     if baseline_avg_full == 0.0:
@@ -388,6 +440,10 @@ def calculate_overdue_convenience_insight(
     qualifying_avg_display = round(qualifying_avg_full, 2)
     baseline_avg_display = round(baseline_avg_full, 2)
     ratio_display = round(ratio_full, 2)
+    qualifying_ci_low_display = round(qualifying_ci_low, 2)
+    qualifying_ci_high_display = round(qualifying_ci_high, 2)
+    baseline_ci_low_display = round(baseline_ci_low, 2)
+    baseline_ci_high_display = round(baseline_ci_high, 2)
 
     # ------------------------------------------------------------------
     # 6. Build headline
@@ -426,6 +482,23 @@ def calculate_overdue_convenience_insight(
         "qualifying_avg": qualifying_avg_display,
         "baseline_avg": baseline_avg_display,
         "ratio": ratio_display,
+        # Statistical rigor metadata
+        "qualifying_ci_95": [qualifying_ci_low_display, qualifying_ci_high_display],
+        "baseline_ci_95": [baseline_ci_low_display, baseline_ci_high_display],
+        "qualifying_std": round(qualifying_std, 2),
+        "baseline_std": round(baseline_std, 2),
+        "outliers_removed_qualifying": len(qualifying_spendings) - len(qualifying_filtered),
+        "outliers_removed_baseline": len(baseline_spendings) - len(baseline_filtered),
+        "statistical_methodology": {
+            "outlier_detection": "IQR method (1.5*IQR bounds)",
+            "confidence_interval": "95% CI using t-distribution approximation",
+            "limitations": [
+                "Small sample size (n < 30), confidence intervals are approximate",
+                "Correlation does not imply causation",
+                "Analysis only captures within-user variation, not population-level effects",
+                "Does not control for confounding variables (holidays, income, household size)"
+            ]
+        },
         "formula": "ratio = mean(qualifying_cf_spending) / mean(baseline_cf_spending)",
         "formula_version": FORMULA_VERSION,
         "recommended_action": (
