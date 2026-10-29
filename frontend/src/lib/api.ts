@@ -69,6 +69,17 @@ export async function getHealth(): Promise<{ status: string; version: string; en
 // ---------------------------------------------------------------------------
 // Profiles & Demo
 // ---------------------------------------------------------------------------
+export async function createPersonalSession(): Promise<{
+  access_token: string
+  user_id: string
+  email: string
+  expires_in_days: number
+  disclosure: string
+}> {
+  return request('/api/v1/demo/personal-session', { method: 'POST' })
+}
+
+
 export async function getProfile(): Promise<Profile> {
   return request('/api/v1/profiles/me')
 }
@@ -97,6 +108,22 @@ export async function resetDemo(): Promise<{ success: boolean; message: string }
 // ---------------------------------------------------------------------------
 // Expenses
 // ---------------------------------------------------------------------------
+export async function importExpensesCsv(csvText: string): Promise<{
+  imported: number
+  skipped: number
+  total_rows: number
+  source: string
+  errors: Array<{ line: number; reason: string }>
+  note: string
+}> {
+  return request('/api/v1/expenses/import-csv', {
+    method: 'POST',
+    body: csvText,
+    headers: { 'Content-Type': 'text/csv' },
+  })
+}
+
+
 export async function getExpenses(params?: {
   start_date?: string
   end_date?: string

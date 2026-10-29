@@ -155,6 +155,12 @@ npm run build
 Production JWT verification uses the project's Auth JWKS endpoint for asymmetric signing keys. Never use the public anon key as a JWT signing secret. The API uses a service-role client, which bypasses RLS, so every database query must remain explicitly scoped to the authenticated user's `user_id`.
 ---
 
+## Import Your Own Real Transactions
+
+The dashboard's **Personal** workspace now supports CSV imports from a user's own bank/card statement. See [Real transaction import and privacy boundaries](docs/real_transaction_import.md) for accepted headers, category inference, limitations, and privacy guidance. Imported transactions are scoped to an isolated anonymous workspace in local/demo mode; tasks must be entered for that same workspace to compute a meaningful personal association.
+
+Do not upload sensitive statements to a public demo deployment. For a deployed product handling personal finance records, configure real Supabase Auth and review storage, retention, and privacy controls first.
+
 ## Real Public Research Data
 
 A reproducible importer is available for the genuine **India Time Use Survey 2024** public release. See [Real public-data ingestion](docs/real_public_data.md) and run `python scripts/import_public_timeuse.py` from `backend/` to download, validate, summarize, and record provenance for the source data.

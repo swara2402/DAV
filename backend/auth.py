@@ -39,10 +39,18 @@ def _decode_demo_token(token: str) -> dict[str, Any] | None:
             options={"require_sub": True, "require_exp": True},
         )
         user_id = payload.get("sub")
-        if user_id not in DEMO_USER_IDS:
-            return None
-        persona = user_id.removeprefix("demo_")
-        return {"user_id": user_id, "email": payload.get("email", f"{persona}@demo.lifedecoded.app"), "is_demo": True}
+        if user_id in DEMO_USER_IDS:
+            persona = user_id.removeprefix("demo_")
+            return {"user_id": user_id, "email": payload.get("email", f"{persona}@demo.lifedecoded.app"), "is_demo": True}
+        # Anonymous workspaces use random UUIDs and server-signed JWTs.
+        if isinstance(user_id, str) and user_id.startswith("demo_session_"):
+            import uuid
+            try:
+                uuid.UUID(user_id.removeprefix("demo_session_"))
+            except (ValueError, AttributeError):
+                return None
+            return {"user_id": user_id, "email": payload.get("email", "personal@demo.lifedecoded.app"), "is_demo": True}
+        return None
     except (JWTError, ValueError, TypeError):
         return None
 
