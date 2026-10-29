@@ -52,3 +52,28 @@ export function formatCategoryName(category: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+
+/**
+ * Format a calendar date using local calendar fields, not UTC.
+ * toISOString() can shift the displayed day for users in time zones ahead of UTC.
+ */
+export function toLocalISODate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/** Return inclusive API date bounds for a period ending on the local calendar day. */
+export function getLocalDateRange(days: number, now: Date = new Date()): {
+  start: string
+  end: string
+} {
+  const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startDate = new Date(endDate)
+  startDate.setDate(startDate.getDate() - Math.max(0, Math.floor(days)))
+  return {
+    start: toLocalISODate(startDate),
+    end: toLocalISODate(endDate),
+  }
+}
