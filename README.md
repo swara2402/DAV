@@ -24,30 +24,38 @@ Rather than just showing budgets, Life, Decoded explains *why* spending patterns
 | Python | 3.11+ |
 | npm | 9+ |
 
-### Local Development (Demo Mode)
+### Local Development (No Supabase Required)
+
+**You do not need a Supabase account, project URL, anon key, or service-role key to run the app locally.** Development mode uses a local SQLite file (`backend/demo.db`) and the bundled synthetic personas.
 
 ```bash
 # 1. Clone and enter the repo
-git clone <repo>
+git clone https://github.com/swara2402/DAV.git
 cd DAV
 
-# 2. Start the backend
+# 2. Start the backend in terminal 1
 cd backend
-pip3 install -r requirements.txt
-cp .env.example .env          # Edit: set ENVIRONMENT=development
+python -m venv .venv
+# macOS/Linux:
+source .venv/bin/activate
+# Windows PowerShell: .venv\\Scripts\\Activate.ps1
+pip install -r requirements.txt
+# Optional: copy the template. The default development settings already use SQLite.
+cp .env.example .env
+# Make sure ENVIRONMENT=development and VITE_DEMO_MODE=true
 uvicorn main:app --reload --port 8000
 
-# 3. Start the frontend (open a new terminal)
+# 3. Start the frontend in terminal 2, from the repo root
 cd frontend
-cp .env.example .env          # Edit: set VITE_API_BASE_URL=http://localhost:8000
 npm install
 npm run dev
 
-# 4. Open the app
-open http://localhost:5173
+# 4. Open http://localhost:5173
 ```
 
-> **Demo mode** uses SQLite and synthetic personas (Maya, Arjun). No real bank connections or personal data required.
+The Vite development server proxies `/api` and `/health` to `http://127.0.0.1:8000`, so you can leave `VITE_API_BASE_URL` unset locally. The first backend startup creates the SQLite schema. Demo personas (Maya and Arjun) use synthetic data, not real bank connections or your personal financial records.
+
+**Important:** this is local demo mode, not production login. Do not deploy it publicly as a substitute for real authentication. Production mode intentionally requires a persistent database and real authentication configuration.
 
 ---
 
