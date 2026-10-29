@@ -129,8 +129,8 @@ _db_instance: SQLiteDB | SupabaseDB | None = None
 def get_db_instance() -> SQLiteDB | SupabaseDB:
     global _db_instance
     if _db_instance is None:
-        if settings.is_production:
-            logger.info("Connecting to Supabase in production mode")
+        if settings.uses_supabase:
+            logger.info("Connecting to Supabase in %s mode", settings.ENVIRONMENT)
             _db_instance = SupabaseDB()
         else:
             path = str(Path(settings.SQLITE_PATH).resolve())
