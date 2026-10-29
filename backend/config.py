@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any\nfrom pathlib import Path
+from typing import Any
+from pathlib import Path
 from urllib.parse import urlparse
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
